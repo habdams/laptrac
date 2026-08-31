@@ -1,26 +1,20 @@
 import { Badge, HStack, Separator, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
-import type { Laptop } from "./types"
+import { conditionLabel, type Laptop } from "./types"
 
 export function LaptopDetailContent({ laptop }: { laptop: Laptop }) {
   return (
     <Stack gap="4">
       <Stack gap="1">
         <Text fontSize="xs" color="fg.muted" textTransform="uppercase" letterSpacing="wide">
-          Serial number
+          Asset name
         </Text>
         <Text fontSize="lg" fontWeight="semibold">
-          {laptop.serialNumber}
+          {laptop.assetName}
         </Text>
       </Stack>
 
       <HStack gap="6" wrap="wrap">
-        <Stack gap="0">
-          <Text fontSize="xs" color="fg.muted">
-            Brand
-          </Text>
-          <Text fontSize="sm">{laptop.brand}</Text>
-        </Stack>
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
             Model
@@ -29,15 +23,36 @@ export function LaptopDetailContent({ laptop }: { laptop: Laptop }) {
         </Stack>
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
-            OS
+            Condition
           </Text>
-          <Text fontSize="sm">{laptop.os}</Text>
+          <Text fontSize="sm">{conditionLabel(laptop.condition)}</Text>
         </Stack>
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
             Status
           </Text>
           <StatusBadge label={laptop.status.replace("-", " ")} tone={laptopStatusTone[laptop.status]} />
+        </Stack>
+      </HStack>
+
+      <HStack gap="6" wrap="wrap">
+        <Stack gap="0">
+          <Text fontSize="xs" color="fg.muted">
+            Location
+          </Text>
+          <Text fontSize="sm">{laptop.assetLocation || "—"}</Text>
+        </Stack>
+        <Stack gap="0">
+          <Text fontSize="xs" color="fg.muted">
+            Department
+          </Text>
+          <Text fontSize="sm">{laptop.employeeDepartment || "—"}</Text>
+        </Stack>
+        <Stack gap="0">
+          <Text fontSize="xs" color="fg.muted">
+            Price
+          </Text>
+          <Text fontSize="sm">{laptop.price ? `$${laptop.price.toLocaleString()}` : "—"}</Text>
         </Stack>
       </HStack>
 
