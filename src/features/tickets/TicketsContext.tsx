@@ -1,36 +1,64 @@
 import * as React from "react"
+import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
 import { loadState, saveState } from "../../lib/persist"
-import { mockTickets } from "./mockTickets"
+import { useMembers } from "../users/MembersContext"
+import { createTicket as createTicketApi, getTickets, type RemoteTicket } from "./ticketsApi"
 import type { Ticket, TicketComment, TicketStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.tickets"
 
+interface TicketsState {
+  tickets: Ticket[]
+  status: "idle" | "loading" | "loaded" | "error"
+  error: string | null
+}
+
 type TicketsAction =
+  | { type: "loading" }
+  | { type: "loaded"; tickets: Ticket[] }
+  | { type: "error"; error: string }
   | { type: "create"; ticket: Ticket }
   | { type: "claim"; id: string; assigneeEmail: string; assigneeName: string }
   | { type: "resolve"; id: string }
   | { type: "comment"; id: string; comment: TicketComment }
 
-function reducer(state: Ticket[], action: TicketsAction): Ticket[] {
+function reducer(state: TicketsState, action: TicketsAction): TicketsState {
   switch (action.type) {
+    case "loading":
+      return { ...state, status: "loading", error: null }
+    case "loaded":
+      return { tickets: action.tickets, status: "loaded", error: null }
+    case "error":
+      return { ...state, status: "error", error: action.error }
     case "create":
-      return [action.ticket, ...state]
+      return { ...state, tickets: [action.ticket, ...state.tickets] }
     case "claim":
-      return state.map((t) =>
-        t.id === action.id
-          ? {
-              ...t,
-              status: "claimed" as TicketStatus,
-              assignedToEmail: action.assigneeEmail,
-              assignedToName: action.assigneeName,
-            }
-          : t,
-      )
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id
+            ? {
+                ...t,
+                status: "claimed" as TicketStatus,
+                assignedToEmail: action.assigneeEmail,
+                assignedToName: action.assigneeName,
+              }
+            : t,
+        ),
+      }
     case "resolve":
-      return state.map((t) => (t.id === action.id ? { ...t, status: "resolved" as TicketStatus } : t))
+      return {
+        ...state,
+        tickets: state.tickets.map((t) => (t.id === action.id ? { ...t, status: "resolved" as TicketStatus } : t)),
+      }
     case "comment":
-      return state.map((t) => (t.id === action.id ? { ...t, comments: [...t.comments, action.comment] } : t))
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.id ? { ...t, comments: [...t.comments, action.comment] } : t,
+        ),
+      }
   }
 }
 
@@ -44,7 +72,10 @@ interface CreateTicketInput {
 
 interface TicketsContextValue {
   tickets: Ticket[]
-  createTicket: (input: CreateTicketInput) => Ticket
+  status: TicketsState["status"]
+  error: string | null
+  refresh: () => Promise<void>
+  createTicket: (input: CreateTicketInput) => Promise<Ticket>
   claimTicket: (id: string, assignee: { email: string; name: string }) => void
   resolveTicket: (id: string) => void
   addComment: (id: string, comment: { authorEmail: string; authorName: string; message: string }) => void
@@ -53,31 +84,90 @@ interface TicketsContextValue {
 const TicketsContext = React.createContext<TicketsContextValue | null>(null)
 
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
-  const [tickets, dispatch] = React.useReducer(reducer, undefined, () =>
-    loadState<Ticket[]>(STORAGE_KEY, mockTickets),
+  const { users } = useMembers()
+  const [state, dispatch] = React.useReducer(reducer, undefined, () =>
+    loadState<TicketsState>(STORAGE_KEY, { tickets: [], status: "idle", error: null }),
   )
 
   React.useEffect(() => {
-    saveState(STORAGE_KEY, tickets)
-  }, [tickets])
+    saveState(STORAGE_KEY, state)
+  }, [state])
 
-  const createTicket = React.useCallback((input: CreateTicketInput) => {
-    const ticket: Ticket = {
-      id: generateId("ticket"),
-      title: input.title,
-      summary: input.summary,
-      status: "open",
-      laptopId: input.laptopId,
-      raisedByEmail: input.raisedByEmail,
-      raisedByName: input.raisedByName,
-      assignedToEmail: null,
-      assignedToName: null,
-      createdAt: new Date().toISOString(),
-      comments: [],
+  const stateRef = React.useRef(state)
+  stateRef.current = state
+
+  // Backend Ticket is just { id, userId, description, comment } — status, claiming, the comment
+  // thread, the title, and the laptop link all stay as a local overlay keyed by the real ticket id.
+  const normalize = React.useCallback(
+    (remote: RemoteTicket[]): Ticket[] => {
+      const existingById = new Map(stateRef.current.tickets.map((t) => [t.id, t]))
+      return remote.map((r) => {
+        const existing = existingById.get(r.id)
+        if (existing) return existing
+        const raiser = users.find((u) => u.id === r.userId)
+        return {
+          id: r.id,
+          title: r.description,
+          summary: r.description,
+          status: "open",
+          laptopId: null,
+          raisedByEmail: raiser?.emailAddress ?? r.userId,
+          raisedByName: raiser?.fullName ?? r.userId,
+          assignedToEmail: null,
+          assignedToName: null,
+          createdAt: new Date().toISOString(),
+          comments: r.comment
+            ? [
+                {
+                  id: generateId("comment"),
+                  authorEmail: raiser?.emailAddress ?? r.userId,
+                  authorName: raiser?.fullName ?? r.userId,
+                  message: r.comment,
+                  createdAt: new Date().toISOString(),
+                },
+              ]
+            : [],
+        }
+      })
+    },
+    [users],
+  )
+
+  const refresh = React.useCallback(async () => {
+    dispatch({ type: "loading" })
+    try {
+      const remote = await getTickets()
+      dispatch({ type: "loaded", tickets: normalize(remote) })
+    } catch (err) {
+      dispatch({ type: "error", error: getErrorMessage(err) })
     }
-    dispatch({ type: "create", ticket })
-    return ticket
-  }, [])
+  }, [normalize])
+
+  React.useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  const createTicket = React.useCallback(
+    async (input: CreateTicketInput) => {
+      const id = await createTicketApi(input.summary, input.summary)
+      const ticket: Ticket = {
+        id,
+        title: input.title,
+        summary: input.summary,
+        status: "open",
+        laptopId: input.laptopId,
+        raisedByEmail: input.raisedByEmail,
+        raisedByName: input.raisedByName,
+        assignedToEmail: null,
+        assignedToName: null,
+        createdAt: new Date().toISOString(),
+        comments: [],
+      }
+      dispatch({ type: "create", ticket })
+      return ticket
+    },
+    [],
+  )
 
   const claimTicket = React.useCallback(
     (id: string, assignee: { email: string; name: string }) =>
@@ -98,8 +188,8 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const value = React.useMemo(
-    () => ({ tickets, createTicket, claimTicket, resolveTicket, addComment }),
-    [tickets, createTicket, claimTicket, resolveTicket, addComment],
+    () => ({ ...state, refresh, createTicket, claimTicket, resolveTicket, addComment }),
+    [state, refresh, createTicket, claimTicket, resolveTicket, addComment],
   )
 
   return <TicketsContext.Provider value={value}>{children}</TicketsContext.Provider>

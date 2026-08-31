@@ -78,7 +78,7 @@ export function Component() {
                 <Text fontSize="xs" color="fg.muted">
                   Laptop
                 </Text>
-                <Text fontSize="sm">{laptop ? `${laptop.brand} ${laptop.model}` : "—"}</Text>
+                <Text fontSize="sm">{laptop ? `${laptop.assetName} ${laptop.model}` : "—"}</Text>
               </Stack>
               <Stack gap="0">
                 <Text fontSize="xs" color="fg.muted">
