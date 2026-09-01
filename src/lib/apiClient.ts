@@ -1,4 +1,5 @@
 import axios from "axios";
+import { authReadyPromise } from "./authTracker";
 
 const baseURL =
   import.meta.env.VITE_API_BASE_URL ??
@@ -12,7 +13,9 @@ export function setAccessTokenGetter(getter: () => string | null) {
   accessTokenGetter = getter;
 }
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
+  await authReadyPromise;
+
   const token = accessTokenGetter();
   console.log(token);
 
