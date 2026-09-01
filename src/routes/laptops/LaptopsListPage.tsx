@@ -22,9 +22,8 @@ export function Component() {
     if (!search) return true
     const q = search.toLowerCase()
     return (
-      l.brand.toLowerCase().includes(q) ||
+      l.assetName.toLowerCase().includes(q) ||
       l.model.toLowerCase().includes(q) ||
-      l.serialNumber.toLowerCase().includes(q) ||
       (l.assignedToName ?? "").toLowerCase().includes(q)
     )
   })
@@ -67,9 +66,9 @@ export function Component() {
         <Table.Root size="sm">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeader>Serial number</Table.ColumnHeader>
-              <Table.ColumnHeader>Brand / Model</Table.ColumnHeader>
-              <Table.ColumnHeader>OS</Table.ColumnHeader>
+              <Table.ColumnHeader>Asset name</Table.ColumnHeader>
+              <Table.ColumnHeader>Model</Table.ColumnHeader>
+              <Table.ColumnHeader>Department</Table.ColumnHeader>
               <Table.ColumnHeader>Assignee</Table.ColumnHeader>
               <Table.ColumnHeader>Status</Table.ColumnHeader>
             </Table.Row>
@@ -84,11 +83,9 @@ export function Component() {
                 bg={params.id === laptop.id ? "colorPalette.subtle" : undefined}
                 _hover={{ bg: "bg.muted" }}
               >
-                <Table.Cell fontWeight="medium">{laptop.serialNumber}</Table.Cell>
-                <Table.Cell>
-                  {laptop.brand} {laptop.model}
-                </Table.Cell>
-                <Table.Cell>{laptop.os}</Table.Cell>
+                <Table.Cell fontWeight="medium">{laptop.assetName}</Table.Cell>
+                <Table.Cell>{laptop.model}</Table.Cell>
+                <Table.Cell>{laptop.employeeDepartment || "—"}</Table.Cell>
                 <Table.Cell>{laptop.assignedToName ?? "Unassigned"}</Table.Cell>
                 <Table.Cell>
                   <StatusBadge label={laptop.status.replace("-", " ")} tone={laptopStatusTone[laptop.status]} />

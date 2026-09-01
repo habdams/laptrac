@@ -33,10 +33,10 @@ export function MyLaptopCard() {
         <HStack justify="space-between" mt="1" gap="2">
           <VStack align="flex-start" gap="0" minW="0">
             <Text fontSize="sm" fontWeight="medium" truncate>
-              {myLaptop.brand} {myLaptop.model}
+              {myLaptop.assetName}
             </Text>
             <Text fontSize="xs" color="fg.muted" truncate>
-              {myLaptop.serialNumber}
+              {myLaptop.model}
             </Text>
           </VStack>
           <StatusBadge label={myLaptop.status.replace("-", " ")} tone={laptopStatusTone[myLaptop.status]} />

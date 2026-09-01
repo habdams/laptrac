@@ -1,38 +1,86 @@
 import * as React from "react"
-import { loadState, saveState } from "../lib/persist"
-import type { AuthState, AuthUser } from "./types"
+import type { User } from "oidc-client-ts"
+import { setAccessTokenGetter } from "../lib/apiClient"
+import { userManager } from "./oidcConfig"
+import type { AuthUser } from "./types"
 
-const STORAGE_KEY = "laptrac.auth"
+type AuthState =
+  | { status: "loading"; user: null }
+  | { status: "anonymous"; user: null }
+  | { status: "authenticated"; user: AuthUser }
 
-type AuthAction = { type: "login"; user: AuthUser } | { type: "logout" }
-
-function reducer(_state: AuthState, action: AuthAction): AuthState {
-  switch (action.type) {
-    case "login":
-      return { status: "authenticated", user: action.user }
-    case "logout":
-      return { status: "anonymous", user: null }
-  }
+function toAuthUser(profile: { sub: string; email?: string; name?: string }): AuthUser {
+  return { sub: profile.sub, email: profile.email ?? "", name: profile.name ?? profile.email ?? "Unknown" }
 }
 
 type AuthContextValue = AuthState & {
-  login: (user: AuthUser) => void
-  logout: () => void
+  login: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = React.useReducer(reducer, undefined, () =>
-    loadState<AuthState>(STORAGE_KEY, { status: "anonymous", user: null }),
-  )
+  const [state, setState] = React.useState<AuthState>({ status: "loading", user: null })
+  const accessTokenRef = React.useRef<string | null>(null)
 
   React.useEffect(() => {
-    saveState(STORAGE_KEY, state)
-  }, [state])
+    setAccessTokenGetter(() => accessTokenRef.current)
+  }, [])
 
-  const login = React.useCallback((user: AuthUser) => dispatch({ type: "login", user }), [])
-  const logout = React.useCallback(() => dispatch({ type: "logout" }), [])
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function recoverSession() {
+      try {
+        let user = await userManager.getUser()
+        if (!user || user.expired) {
+          user = await userManager.signinSilent()
+        }
+        if (cancelled) return
+        if (user && !user.expired) {
+          accessTokenRef.current = user.access_token
+          setState({ status: "authenticated", user: toAuthUser(user.profile) })
+        } else {
+          setState({ status: "anonymous", user: null })
+        }
+      } catch {
+        if (!cancelled) setState({ status: "anonymous", user: null })
+      }
+    }
+
+    recoverSession()
+
+    const handleUserLoaded = (user: User) => {
+      accessTokenRef.current = user.access_token
+      setState({ status: "authenticated", user: toAuthUser(user.profile) })
+    }
+    const handleUserUnloaded = () => {
+      accessTokenRef.current = null
+      setState({ status: "anonymous", user: null })
+    }
+    const handleSilentRenewError = () => {
+      accessTokenRef.current = null
+      setState({ status: "anonymous", user: null })
+    }
+
+    userManager.events.addUserLoaded(handleUserLoaded)
+    userManager.events.addUserUnloaded(handleUserUnloaded)
+    userManager.events.addSilentRenewError(handleSilentRenewError)
+
+    return () => {
+      cancelled = true
+      userManager.events.removeUserLoaded(handleUserLoaded)
+      userManager.events.removeUserUnloaded(handleUserUnloaded)
+      userManager.events.removeSilentRenewError(handleSilentRenewError)
+    }
+  }, [])
+
+  const login = React.useCallback(() => userManager.signinRedirect(), [])
+  const logout = React.useCallback(async () => {
+    accessTokenRef.current = null
+    await userManager.signoutRedirect()
+  }, [])
 
   const value = React.useMemo(() => ({ ...state, login, logout }), [state, login, logout])
 

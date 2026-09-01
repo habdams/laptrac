@@ -16,6 +16,7 @@ import { useITTeam } from "../../features/admin/ITTeamContext"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
+import { getErrorMessage } from "../../lib/errors"
 
 export function Component() {
   const navigate = useNavigate()
@@ -30,24 +31,32 @@ export function Component() {
   const [title, setTitle] = React.useState("")
   const [summary, setSummary] = React.useState("")
   const [laptopId, setLaptopId] = React.useState(myLaptops[0]?.id ?? "")
+  const [submitting, setSubmitting] = React.useState(false)
 
   const close = () => navigate("/tickets")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !title.trim() || !summary.trim()) return
 
-    const ticket = createTicket({
-      title: title.trim(),
-      summary: summary.trim(),
-      laptopId: laptopId || null,
-      raisedByEmail: user.email,
-      raisedByName: user.name,
-    })
+    setSubmitting(true)
+    try {
+      const ticket = await createTicket({
+        title: title.trim(),
+        summary: summary.trim(),
+        laptopId: laptopId || null,
+        raisedByEmail: user.email,
+        raisedByName: user.name,
+      })
 
-    allowlist.forEach((email) => notify(email, `${user.name} raised a new ticket: "${ticket.title}"`))
-    toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
-    navigate(`/tickets/${ticket.id}`)
+      allowlist.forEach((email) => notify(email, `${user.name} raised a new ticket: "${ticket.title}"`))
+      toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
+      navigate(`/tickets/${ticket.id}`)
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't submit ticket", description: getErrorMessage(err) })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -84,7 +93,7 @@ export function Component() {
                     <NativeSelect.Field value={laptopId} onChange={(e) => setLaptopId(e.target.value)}>
                       {myLaptops.map((l) => (
                         <option key={l.id} value={l.id}>
-                          {l.brand} {l.model} ({l.serialNumber})
+                          {l.assetName} {l.model}
                         </option>
                       ))}
                     </NativeSelect.Field>
@@ -98,7 +107,7 @@ export function Component() {
             <Button variant="ghost" onClick={close} type="button">
               Cancel
             </Button>
-            <Button colorPalette="orange" type="submit">
+            <Button colorPalette="orange" type="submit" loading={submitting}>
               Submit
             </Button>
           </DialogFooter>

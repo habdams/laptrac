@@ -38,7 +38,7 @@ export function Component() {
 
   const laptopLabel = (laptopId: string | null) => {
     const laptop = laptops.find((l) => l.id === laptopId)
-    return laptop ? `${laptop.brand} ${laptop.model}` : "—"
+    return laptop ? `${laptop.assetName} ${laptop.model}` : "—"
   }
 
   return (
