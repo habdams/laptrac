@@ -23,7 +23,7 @@ const settings: UserManagerSettings = {
   authority: import.meta.env.VITE_OIDC_AUTHORITY,
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
   redirect_uri: `${window.location.origin}/signin-oidc`,
-  post_logout_redirect_uri: `${window.location.origin}/signin-oidc`,
+  post_logout_redirect_uri: `${window.location.origin}/login`,
   silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
   scope: SCOPE,
   response_type: "code",
