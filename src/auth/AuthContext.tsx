@@ -1,6 +1,5 @@
 import * as React from "react"
 import type { User } from "oidc-client-ts"
-import { getCurrentUserRole } from "../features/users/usersApi"
 import { setAccessTokenGetter } from "../lib/apiClient"
 import { userManager } from "./oidcConfig"
 import type { AuthUser } from "./types"
@@ -10,18 +9,8 @@ type AuthState =
   | { status: "anonymous"; user: null }
   | { status: "authenticated"; user: AuthUser }
 
-function toAuthUser(profile: { sub: string; email?: string; name?: string }, role: AuthUser["role"]): AuthUser {
-  return { sub: profile.sub, email: profile.email ?? "", name: profile.name ?? profile.email ?? "Unknown", role }
-}
-
-// Least-privilege default: a failed role lookup should never grant IT access.
-async function resolveRole(): Promise<AuthUser["role"]> {
-  try {
-    const role = await getCurrentUserRole()
-    return role === 1 ? "it" : "employee"
-  } catch {
-    return "employee"
-  }
+function toAuthUser(profile: { sub: string; email?: string; name?: string }): AuthUser {
+  return { sub: profile.sub, email: profile.email ?? "", name: profile.name ?? profile.email ?? "Unknown" }
 }
 
 type AuthContextValue = AuthState & {
@@ -56,9 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return
         if (user && !user.expired) {
           accessTokenRef.current = user.access_token
-          const role = await resolveRole()
-          if (cancelled) return
-          setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
+          setState({ status: "authenticated", user: toAuthUser(user.profile) })
         } else {
           setState({ status: "anonymous", user: null })
         }
@@ -71,9 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleUserLoaded = (user: User) => {
       accessTokenRef.current = user.access_token
-      resolveRole().then((role) => {
-        setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
-      })
+      setState({ status: "authenticated", user: toAuthUser(user.profile) })
     }
     const handleUserUnloaded = () => {
       accessTokenRef.current = null

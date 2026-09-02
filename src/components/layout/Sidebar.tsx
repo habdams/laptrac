@@ -43,6 +43,7 @@ export function Sidebar() {
           <SidebarLink to="/tickets" icon={<LuTicket />} label="Tickets" />
           {role === "it" && <SidebarLink to="/laptops" icon={<LuLaptop />} label="Laptops" />}
           {role === "it" && <SidebarLink to="/admin/members" icon={<LuUsers />} label="Members" />}
+          {role === "it" && <SidebarLink to="/admin/it-team" icon={<LuUsers />} label="IT Team" />}
         </Stack>
 
         <Box flex="1" />

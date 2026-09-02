@@ -12,10 +12,10 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog"
 import { toaster } from "../../components/ui/toaster"
+import { useITTeam } from "../../features/admin/ITTeamContext"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
-import { useMembers } from "../../features/users/MembersContext"
 import { getErrorMessage } from "../../lib/errors"
 
 export function Component() {
@@ -24,7 +24,7 @@ export function Component() {
   const { laptops } = useLaptops()
   const { createTicket } = useTickets()
   const { notify } = useNotifications()
-  const { users } = useMembers()
+  const { allowlist } = useITTeam()
 
   const myLaptops = laptops.filter((l) => l.assignedToEmail === user?.email)
 
@@ -49,9 +49,7 @@ export function Component() {
         raisedByName: user.name,
       })
 
-      users
-        .filter((u) => u.roles.includes(1) && u.emailAddress)
-        .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${ticket.title}"`))
+      allowlist.forEach((email) => notify(email, `${user.name} raised a new ticket: "${ticket.title}"`))
       toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
       navigate(`/tickets/${ticket.id}`)
     } catch (err) {

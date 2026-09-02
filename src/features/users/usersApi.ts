@@ -11,11 +11,6 @@ export async function getUsers(): Promise<User[]> {
   return data
 }
 
-export async function getCurrentUserRole(): Promise<number> {
-  const { data } = await apiClient.get<{ role: number }>("/api/users/current-user")
-  return data.role
-}
-
 export async function createUser(input: CreateUserInput): Promise<CreateUserResponse> {
   const { data } = await apiClient.post<CreateUserResponse>("/api/users", {
     email: input.email,
