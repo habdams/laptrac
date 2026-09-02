@@ -24,8 +24,12 @@ const settings: UserManagerSettings = {
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: `${window.location.origin}/login`,
+  silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
+  // TEMPORARY for demo: IdentityServer client "web" is still registered as confidential,
+  // so the token endpoint rejects requests without this. It ships in plaintext in the
+  // built bundle (VITE_ vars are inlined client-side) — remove once backend makes the
+  // client public/PKCE-only. See POST_DEMO_TODO.md.
   client_secret: import.meta.env.VITE_OIDC_SECRET,
-  // silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
   scope: SCOPE,
   response_type: "code",
   automaticSilentRenew: true,

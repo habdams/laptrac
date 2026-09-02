@@ -32,6 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false
 
     async function recoverSession() {
+      // CallbackPage owns session establishment here via signinRedirectCallback().
+      // Racing it with signinSilent() (a separate, cross-origin iframe round trip)
+      // can resolve after the real login and stomp a freshly-authenticated state.
+      if (window.location.pathname === "/auth/callback") return
+
       try {
         let user = await userManager.getUser()
         if (!user || user.expired) {
