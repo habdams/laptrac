@@ -19,7 +19,9 @@ export function Component() {
   const [tab, setTab] = React.useState("all")
   const [search, setSearch] = React.useState("")
 
-  const scoped = role === "it" ? tickets : tickets.filter((t) => t.raisedByEmail === user?.email)
+  // Visibility is now scoped server-side (getTickets for IT, getCurrentUserTickets otherwise —
+  // see TicketsContext.refresh), so `tickets` already only contains what this user may see.
+  const scoped = tickets
 
   const filtered = scoped.filter((t) => {
     if (tab === "open" && t.status !== "open") return false
