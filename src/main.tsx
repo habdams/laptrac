@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import { AuthProvider } from './auth/AuthContext.tsx'
 import { Provider } from './components/ui/provider.tsx'
 import { Toaster } from './components/ui/toaster.tsx'
-import { ITTeamProvider } from './features/admin/ITTeamContext.tsx'
 import { LaptopsProvider } from './features/laptops/LaptopsContext.tsx'
 import { NotificationsProvider } from './features/notifications/NotificationsContext.tsx'
 import { TicketsProvider } from './features/tickets/TicketsContext.tsx'
@@ -36,10 +35,6 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: 'admin/it-team',
-        lazy: () => import('./routes/admin/ITTeamPage.tsx'),
-      },
-      {
         path: 'admin/members',
         lazy: () => import('./routes/admin/MembersPage.tsx'),
       },
@@ -52,18 +47,16 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider>
       <AuthProvider>
-        <ITTeamProvider>
-          <MembersProvider>
-            <NotificationsProvider>
-              <LaptopsProvider>
-                <TicketsProvider>
-                  <Toaster />
-                  <RouterProvider router={router} />
-                </TicketsProvider>
-              </LaptopsProvider>
-            </NotificationsProvider>
-          </MembersProvider>
-        </ITTeamProvider>
+        <MembersProvider>
+          <NotificationsProvider>
+            <LaptopsProvider>
+              <TicketsProvider>
+                <Toaster />
+                <RouterProvider router={router} />
+              </TicketsProvider>
+            </LaptopsProvider>
+          </NotificationsProvider>
+        </MembersProvider>
       </AuthProvider>
     </Provider>
   </StrictMode>,

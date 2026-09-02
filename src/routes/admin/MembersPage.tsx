@@ -98,6 +98,20 @@ export function Component() {
                       toaster.create({ type: "error", title: "Couldn't update member", description: getErrorMessage(err) })
                     }
                   }}
+                  onToggleRole={async () => {
+                    try {
+                      const role = u.roles.includes(1) ? u.roles.filter((r) => r !== 1) : [...u.roles, 1]
+                      await updateMember(u.id, {
+                        email: u.emailAddress ?? "",
+                        firstName: u.firstName ?? "",
+                        lastName: u.lastName ?? "",
+                        role,
+                      })
+                      toaster.create({ type: "success", title: u.roles.includes(1) ? "IT access revoked" : "Made IT member" })
+                    } catch (err) {
+                      toaster.create({ type: "error", title: "Couldn't update role", description: getErrorMessage(err) })
+                    }
+                  }}
                 />
               ))}
               {users.length === 0 && (
@@ -123,17 +137,21 @@ function MemberRow({
   onEdit,
   onCancel,
   onSave,
+  onToggleRole,
 }: {
   user: User
   editing: boolean
   onEdit: () => void
   onCancel: () => void
   onSave: (input: { email: string; firstName: string; lastName: string }) => Promise<void>
+  onToggleRole: () => Promise<void>
 }) {
   const [email, setEmail] = React.useState(user.emailAddress ?? "")
   const [firstName, setFirstName] = React.useState(user.firstName ?? "")
   const [lastName, setLastName] = React.useState(user.lastName ?? "")
   const [saving, setSaving] = React.useState(false)
+  const [togglingRole, setTogglingRole] = React.useState(false)
+  const isIT = user.roles.includes(1)
 
   if (editing) {
     return (
@@ -180,6 +198,19 @@ function MemberRow({
       <Table.Cell>{user.isActive ? "Yes" : "No"}</Table.Cell>
       <Table.Cell>
         <HStack justify="flex-end">
+          <Button
+            size="xs"
+            variant="ghost"
+            colorPalette={isIT ? "red" : "orange"}
+            loading={togglingRole}
+            onClick={async () => {
+              setTogglingRole(true)
+              await onToggleRole()
+              setTogglingRole(false)
+            }}
+          >
+            {isIT ? "Revoke IT" : "Make IT"}
+          </Button>
           <Button size="xs" variant="ghost" onClick={onEdit}>
             Edit
           </Button>
