@@ -1,10 +1,22 @@
 import { apiClient } from "../../lib/apiClient"
 
+export interface RemoteTicketHistoryEntry {
+  ticketID: string
+  userLaptopID: string
+  ticketHistoryStatus: number
+  assignedTo: string | null
+  resolvedBy: string | null
+  actionBy: string | null
+  comment: string | null
+  closedAt: string
+}
+
 export interface RemoteTicket {
   id: string
   userId: string
   description: string
   comment: string
+  ticketHistory: RemoteTicketHistoryEntry[]
 }
 
 interface PaginatedListOfTicket {
@@ -17,6 +29,13 @@ interface PaginatedListOfTicket {
 
 export async function getTickets(pageNumber = 1, pageSize = 100): Promise<RemoteTicket[]> {
   const { data } = await apiClient.get<PaginatedListOfTicket>("/api/tickets", {
+    params: { pageNumber, pageSize },
+  })
+  return data.item
+}
+
+export async function getCurrentUserTickets(pageNumber = 1, pageSize = 100): Promise<RemoteTicket[]> {
+  const { data } = await apiClient.get<PaginatedListOfTicket>("/api/tickets/current-user", {
     params: { pageNumber, pageSize },
   })
   return data.item

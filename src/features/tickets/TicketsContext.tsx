@@ -1,12 +1,22 @@
 import * as React from "react"
+import { useRole } from "../../auth/useRole"
 import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
 import { loadState, saveState } from "../../lib/persist"
 import { useMembers } from "../users/MembersContext"
-import { createTicket as createTicketApi, getTickets, type RemoteTicket } from "./ticketsApi"
+import {
+  createTicket as createTicketApi,
+  getCurrentUserTickets,
+  getTickets,
+  type RemoteTicket,
+} from "./ticketsApi"
 import type { Ticket, TicketComment, TicketStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.tickets"
+
+// 0/1/3 confirmed with backend; any other value (e.g. 2) is unconfirmed, default to "open"
+// rather than throw.
+const STATUS_BY_HISTORY: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 3: "resolved" }
 
 interface TicketsState {
   tickets: Ticket[]
@@ -85,6 +95,7 @@ const TicketsContext = React.createContext<TicketsContextValue | null>(null)
 
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const { users } = useMembers()
+  const role = useRole()
   const [state, dispatch] = React.useReducer(reducer, undefined, () =>
     loadState<TicketsState>(STORAGE_KEY, { tickets: [], status: "idle", error: null }),
   )
@@ -96,8 +107,11 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const stateRef = React.useRef(state)
   stateRef.current = state
 
-  // Backend Ticket is just { id, userId, description, comment } — status, claiming, the comment
-  // thread, the title, and the laptop link all stay as a local overlay keyed by the real ticket id.
+  // Backend Ticket is { id, userId, description, comment, ticketHistory } — the comment thread,
+  // title, and laptop link all stay as a local overlay keyed by the real ticket id. status and
+  // assignedTo are seeded from ticketHistory the first time a ticket is seen; after that, local
+  // claimTicket/resolveTicket dispatches are the only source (no backend mutation endpoint exists
+  // yet to round-trip a claim/resolve, so once cached, the existing local copy wins).
   const normalize = React.useCallback(
     (remote: RemoteTicket[]): Ticket[] => {
       const existingById = new Map(stateRef.current.tickets.map((t) => [t.id, t]))
@@ -105,16 +119,18 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
         const existing = existingById.get(r.id)
         if (existing) return existing
         const raiser = users.find((u) => u.id === r.userId)
+        const lastHistory = r.ticketHistory.at(-1)
+        const assignee = lastHistory?.assignedTo ? users.find((u) => u.id === lastHistory.assignedTo) : undefined
         return {
           id: r.id,
           title: r.description,
           summary: r.description,
-          status: "open",
+          status: lastHistory ? (STATUS_BY_HISTORY[lastHistory.ticketHistoryStatus] ?? "open") : "open",
           laptopId: null,
           raisedByEmail: raiser?.emailAddress ?? r.userId,
           raisedByName: raiser?.fullName ?? r.userId,
-          assignedToEmail: null,
-          assignedToName: null,
+          assignedToEmail: assignee?.emailAddress ?? null,
+          assignedToName: assignee?.fullName ?? null,
           createdAt: new Date().toISOString(),
           comments: r.comment
             ? [
@@ -136,12 +152,12 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const refresh = React.useCallback(async () => {
     dispatch({ type: "loading" })
     try {
-      const remote = await getTickets()
+      const remote = role === "it" ? await getTickets() : await getCurrentUserTickets()
       dispatch({ type: "loaded", tickets: normalize(remote) })
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
-  }, [normalize])
+  }, [normalize, role])
 
   React.useEffect(() => {
     refresh()
