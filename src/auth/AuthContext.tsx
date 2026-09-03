@@ -2,6 +2,7 @@ import * as React from "react"
 import type { User } from "oidc-client-ts"
 import { getCurrentUserRole } from "../features/users/usersApi"
 import { setAccessTokenGetter } from "../lib/apiClient"
+import { setAuthAsReady } from "../lib/authTracker"
 import { userManager } from "./oidcConfig"
 import type { AuthUser } from "./types"
 
@@ -56,13 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return
         if (user && !user.expired) {
           accessTokenRef.current = user.access_token
+          // Unblock apiClient's auth-ready gate now that the token is set — the
+          // role lookup below goes through that same gate, so resolving it any
+          // later (e.g. after setState) deadlocks: the gate waits on "authenticated"
+          // state, which waits on this fetch, which waits on the gate.
+          setAuthAsReady()
           const role = await resolveRole()
           if (cancelled) return
           setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
         } else {
+          setAuthAsReady()
           setState({ status: "anonymous", user: null })
         }
       } catch {
+        setAuthAsReady()
         if (!cancelled) setState({ status: "anonymous", user: null })
       }
     }
@@ -71,16 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleUserLoaded = (user: User) => {
       accessTokenRef.current = user.access_token
+      setAuthAsReady()
       resolveRole().then((role) => {
         setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
       })
     }
     const handleUserUnloaded = () => {
       accessTokenRef.current = null
+      setAuthAsReady()
       setState({ status: "anonymous", user: null })
     }
     const handleSilentRenewError = () => {
       accessTokenRef.current = null
+      setAuthAsReady()
       setState({ status: "anonymous", user: null })
     }
 
