@@ -17,7 +17,6 @@ apiClient.interceptors.request.use(async (config) => {
   await authReadyPromise;
 
   const token = accessTokenGetter();
-  console.log(token);
 
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
