@@ -71,3 +71,25 @@ win and are never synced back.
 Once these exist, replace the local `dispatch()` calls in `claimTicket`/`resolveTicket` with
 real API calls, and remove the `if (existing) return existing` short-circuit in `normalize()`
 so status/assignee stay live from the server instead of freezing after first load.
+
+## Laptops
+
+### 7. Backend: add `GET /api/laptops/current-user`
+
+`src/features/laptops/LaptopsContext.tsx` called `GET /api/laptops` (every laptop, for every
+user) unconditionally, regardless of role — an employee opening `TicketDetailDrawer` or just
+seeing "My laptop" in the sidebar pulled the full company laptop list (and every assignment)
+to find their own one entry client-side. Scoped this the same way tickets were scoped:
+non-`"it"` users now call `getCurrentUserLaptops()`, pointed at
+`GET /api/laptops/current-user` (`src/features/laptops/laptopsApi.ts`) — **this endpoint
+doesn't exist on the backend yet**, calls to it will 404 until it's added.
+
+**Ask backend for:**
+- `GET /api/laptops/current-user`, scoped by the bearer token to the calling user's own laptop(s).
+- Same response envelope as the existing `GET /api/laptops` — `PaginatedListOfUserLaptop`
+  (`{ pageIndex, totalPages, item: RemoteUserLaptop[], hasPreviousPage, hasNextPage }`), just
+  server-filtered — no new shape to add on the frontend. Confirmed one laptop per user, so
+  `item` will realistically be a 0- or 1-length array, but keeping the same paginated envelope
+  as `/api/tickets/current-user` keeps the client code uniform.
+- Accepts the same `pageNumber`/`pageSize` query params as `/api/laptops` for consistency (the
+  frontend calls it with `pageNumber=1, pageSize=100`, same default as everywhere else).

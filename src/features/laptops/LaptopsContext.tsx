@@ -1,9 +1,16 @@
 import * as React from "react"
+import { useRole } from "../../auth/useRole"
 import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
 import { loadState, saveState } from "../../lib/persist"
 import { useMembers } from "../users/MembersContext"
-import { createLaptop, getLaptops, type CreateLaptopInput, type RemoteUserLaptop } from "./laptopsApi"
+import {
+  createLaptop,
+  getCurrentUserLaptops,
+  getLaptops,
+  type CreateLaptopInput,
+  type RemoteUserLaptop,
+} from "./laptopsApi"
 import type { Laptop, LaptopHistoryEntry, LaptopStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.laptops"
@@ -88,6 +95,7 @@ const LaptopsContext = React.createContext<LaptopsContextValue | null>(null)
 
 export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   const { users } = useMembers()
+  const role = useRole()
   const [state, dispatch] = React.useReducer(reducer, undefined, () =>
     loadState<LaptopsState>(STORAGE_KEY, { laptops: [], status: "idle", error: null }),
   )
@@ -133,12 +141,12 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   const refresh = React.useCallback(async () => {
     dispatch({ type: "loading" })
     try {
-      const remote = await getLaptops()
+      const remote = role === "it" ? await getLaptops() : await getCurrentUserLaptops()
       dispatch({ type: "loaded", laptops: normalize(remote) })
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
-  }, [normalize])
+  }, [normalize, role])
 
   React.useEffect(() => {
     refresh()

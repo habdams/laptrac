@@ -44,6 +44,13 @@ export async function getLaptops(pageNumber = 1, pageSize = 100): Promise<Remote
   return data.item
 }
 
+export async function getCurrentUserLaptops(pageNumber = 1, pageSize = 100): Promise<RemoteUserLaptop[]> {
+  const { data } = await apiClient.get<PaginatedListOfUserLaptop>("/api/laptops/current-user", {
+    params: { pageNumber, pageSize },
+  })
+  return data.item
+}
+
 export async function createLaptop(userID: string, input: CreateLaptopInput): Promise<string> {
   const { data } = await apiClient.post<{ laptopId: string }>(`/api/laptops/create/${userID}`, input)
   return data.laptopId
