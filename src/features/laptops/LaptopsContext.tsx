@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useRole } from "../../auth/useRole"
 import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
 import { loadState, saveState } from "../../lib/persist"
@@ -87,6 +88,7 @@ interface LaptopsContextValue {
 const LaptopsContext = React.createContext<LaptopsContextValue | null>(null)
 
 export function LaptopsProvider({ children }: { children: React.ReactNode }) {
+  const role = useRole()
   const { users } = useMembers()
   const [state, dispatch] = React.useReducer(reducer, undefined, () =>
     loadState<LaptopsState>(STORAGE_KEY, { laptops: [], status: "idle", error: null }),
@@ -130,7 +132,15 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
     [users],
   )
 
+  // GET /api/laptops is the full company inventory — IT-only functionality (the admin laptops
+  // list/detail/create flows). Non-IT users get their own laptop from /api/users/current-user
+  // instead, so skip this fetch for them rather than shipping every employee's asset record to
+  // every employee.
   const refresh = React.useCallback(async () => {
+    if (role !== "it") {
+      dispatch({ type: "loaded", laptops: [] })
+      return
+    }
     dispatch({ type: "loading" })
     try {
       const remote = await getLaptops()
@@ -138,7 +148,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
-  }, [normalize])
+  }, [normalize, role])
 
   React.useEffect(() => {
     refresh()

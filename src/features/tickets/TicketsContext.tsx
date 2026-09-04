@@ -96,7 +96,7 @@ const TicketsContext = React.createContext<TicketsContextValue | null>(null)
 
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const { users } = useMembers()
-  const { status: authStatus } = useAuth()
+  const { status: authStatus, user: authUser } = useAuth()
   const role = useRole()
   const [state, dispatch] = React.useReducer(reducer, undefined, () =>
     loadState<TicketsState>(STORAGE_KEY, { tickets: [], status: "idle", error: null }),
@@ -117,14 +117,22 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   // fields). The raiser's display name/email is NOT local-only (nothing ever mutates it), so it's
   // always refreshed from the current `users` list — otherwise it gets permanently stuck on a
   // fallback if this ticket was first normalized before the member list finished loading.
+  //
+  // `users` is only populated for IT (GET /api/users is IT-only, see MembersContext) — for a
+  // non-IT viewer it's always []. That's fine for the raiser, since a non-IT user only ever sees
+  // their own tickets (getCurrentUserTickets), so r.userId === authUser.id and we can resolve the
+  // name/email from the authenticated user directly instead of the member list. The assignee is
+  // someone else (an IT member), which a non-IT user has no way to resolve to a name without that
+  // list — fall back to a generic "IT team" label rather than leaving it blank.
   const normalize = React.useCallback(
     (remote: RemoteTicket[]): Ticket[] => {
       const existingById = new Map(stateRef.current.tickets.map((t) => [t.id, t]))
       return remote.map((r) => {
         const existing = existingById.get(r.id)
         const raiser = users.find((u) => u.id === r.userId)
-        const raisedByEmail = raiser?.emailAddress ?? r.userId
-        const raisedByName = raiser?.fullName ?? r.userId
+        const isSelf = r.userId === authUser?.id
+        const raisedByEmail = raiser?.emailAddress ?? (isSelf ? authUser?.email : undefined) ?? r.userId
+        const raisedByName = raiser?.fullName ?? (isSelf ? authUser?.name : undefined) ?? r.userId
 
         if (existing) return { ...existing, raisedByEmail, raisedByName }
 
@@ -139,7 +147,7 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
           raisedByEmail,
           raisedByName,
           assignedToEmail: assignee?.emailAddress ?? null,
-          assignedToName: assignee?.fullName ?? null,
+          assignedToName: assignee?.fullName ?? (lastHistory?.assignedTo ? "IT team" : null),
           createdAt: new Date().toISOString(),
           comments: r.comment
             ? [

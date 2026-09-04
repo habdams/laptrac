@@ -35,7 +35,10 @@ export function Component() {
     return <Navigate to="/tickets" replace />
   }
 
-  const laptop = laptops.find((l) => l.id === ticket.laptopId)
+  // `laptops` (the full IT-only inventory) is empty for non-IT users — fall back to their own
+  // laptop from the current-user API, which is the only laptop a non-IT ticket can reference.
+  const laptop =
+    laptops.find((l) => l.id === ticket.laptopId) ?? (ticket.laptopId === user?.id ? user?.laptop ?? null : null)
   const canManage = role === "it"
 
   const handleClaim = () => {

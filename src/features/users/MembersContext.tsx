@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useRole } from "../../auth/useRole"
 import { getErrorMessage } from "../../lib/errors"
 import { createUser, getUsers, updateUser } from "./usersApi"
 import type { CreateUserInput, UpdateUserInput, User } from "./types"
@@ -42,9 +43,17 @@ interface MembersContextValue extends MembersState {
 const MembersContext = React.createContext<MembersContextValue | null>(null)
 
 export function MembersProvider({ children }: { children: React.ReactNode }) {
+  const role = useRole()
   const [state, dispatch] = React.useReducer(reducer, { users: [], status: "idle", error: null })
 
+  // GET /api/users is the full member directory — IT-only functionality (member management,
+  // laptop-owner picker). Non-IT users never need it, so skip the fetch entirely for them rather
+  // than exposing every employee's record to every employee.
   const refresh = React.useCallback(async () => {
+    if (role !== "it") {
+      dispatch({ type: "loaded", users: [] })
+      return
+    }
     dispatch({ type: "loading" })
     try {
       const users = await getUsers()
@@ -52,7 +61,7 @@ export function MembersProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
-  }, [])
+  }, [role])
 
   React.useEffect(() => {
     refresh()

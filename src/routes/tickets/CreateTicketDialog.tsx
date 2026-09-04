@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog"
 import { toaster } from "../../components/ui/toaster"
-import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
 import { useMembers } from "../../features/users/MembersContext"
@@ -21,16 +20,17 @@ import { getErrorMessage } from "../../lib/errors"
 export function Component() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { laptops } = useLaptops()
   const { createTicket } = useTickets()
   const { notify } = useNotifications()
   const { users } = useMembers()
 
-  const myLaptops = laptops.filter((l) => l.assignedToEmail === user?.email)
+  // The signed-in user's own laptop, sourced from /api/users/current-user — not the full
+  // /api/laptops inventory, which is IT-only and never fetched for non-IT users.
+  const myLaptop = user?.laptop ?? null
 
   const [title, setTitle] = React.useState("")
   const [summary, setSummary] = React.useState("")
-  const [laptopId, setLaptopId] = React.useState(myLaptops[0]?.id ?? "")
+  const [laptopId, setLaptopId] = React.useState(myLaptop && user ? user.id : "")
   const [submitting, setSubmitting] = React.useState(false)
 
   const close = () => navigate("/tickets")
@@ -49,6 +49,9 @@ export function Component() {
         raisedByName: user.name,
       })
 
+      // `users` is only populated for IT (see MembersContext) — for an employee-filed ticket
+      // this is an empty array, so the fan-out below is a no-op until the backend exposes a
+      // narrower "IT members" endpoint that doesn't require the full directory.
       users
         .filter((u) => u.roles === 1 && u.emailAddress)
         .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${ticket.title}"`))
@@ -88,16 +91,14 @@ export function Component() {
                   rows={4}
                 />
               </Field.Root>
-              {myLaptops.length > 0 && (
+              {myLaptop && user && (
                 <Field.Root>
                   <Field.Label>Laptop</Field.Label>
                   <NativeSelect.Root>
                     <NativeSelect.Field value={laptopId} onChange={(e) => setLaptopId(e.target.value)}>
-                      {myLaptops.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.assetName} {l.model}
-                        </option>
-                      ))}
+                      <option value={user.id}>
+                        {myLaptop.assetName} {myLaptop.model}
+                      </option>
                     </NativeSelect.Field>
                     <NativeSelect.Indicator />
                   </NativeSelect.Root>
