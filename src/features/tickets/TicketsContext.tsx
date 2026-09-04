@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useAuth } from "../../auth/AuthContext"
 import { useRole } from "../../auth/useRole"
 import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
@@ -95,6 +96,7 @@ const TicketsContext = React.createContext<TicketsContextValue | null>(null)
 
 export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const { users } = useMembers()
+  const { status: authStatus } = useAuth()
   const role = useRole()
   const [state, dispatch] = React.useReducer(reducer, undefined, () =>
     loadState<TicketsState>(STORAGE_KEY, { tickets: [], status: "idle", error: null }),
@@ -107,18 +109,25 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const stateRef = React.useRef(state)
   stateRef.current = state
 
-  // Backend Ticket is { id, userId, description, comment, ticketHistory } — the comment thread,
-  // title, and laptop link all stay as a local overlay keyed by the real ticket id. status and
-  // assignedTo are seeded from ticketHistory the first time a ticket is seen; after that, local
+  // Backend Ticket is { id, userId, description, comment, ticketHistory } — the comment thread
+  // and laptop link stay as a local overlay keyed by the real ticket id. status and assignedTo
+  // are seeded from ticketHistory the first time a ticket is seen; after that, local
   // claimTicket/resolveTicket dispatches are the only source (no backend mutation endpoint exists
-  // yet to round-trip a claim/resolve, so once cached, the existing local copy wins).
+  // yet to round-trip a claim/resolve, so once cached, the existing local copy wins for those
+  // fields). The raiser's display name/email is NOT local-only (nothing ever mutates it), so it's
+  // always refreshed from the current `users` list — otherwise it gets permanently stuck on a
+  // fallback if this ticket was first normalized before the member list finished loading.
   const normalize = React.useCallback(
     (remote: RemoteTicket[]): Ticket[] => {
       const existingById = new Map(stateRef.current.tickets.map((t) => [t.id, t]))
       return remote.map((r) => {
         const existing = existingById.get(r.id)
-        if (existing) return existing
         const raiser = users.find((u) => u.id === r.userId)
+        const raisedByEmail = raiser?.emailAddress ?? r.userId
+        const raisedByName = raiser?.fullName ?? r.userId
+
+        if (existing) return { ...existing, raisedByEmail, raisedByName }
+
         const lastHistory = r.ticketHistory.at(-1)
         const assignee = lastHistory?.assignedTo ? users.find((u) => u.id === lastHistory.assignedTo) : undefined
         return {
@@ -127,8 +136,8 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
           summary: r.description,
           status: lastHistory ? (STATUS_BY_HISTORY[lastHistory.ticketHistoryStatus] ?? "open") : "open",
           laptopId: null,
-          raisedByEmail: raiser?.emailAddress ?? r.userId,
-          raisedByName: raiser?.fullName ?? r.userId,
+          raisedByEmail,
+          raisedByName,
           assignedToEmail: assignee?.emailAddress ?? null,
           assignedToName: assignee?.fullName ?? null,
           createdAt: new Date().toISOString(),
@@ -136,8 +145,8 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
             ? [
                 {
                   id: generateId("comment"),
-                  authorEmail: raiser?.emailAddress ?? r.userId,
-                  authorName: raiser?.fullName ?? r.userId,
+                  authorEmail: raisedByEmail,
+                  authorName: raisedByName,
                   message: r.comment,
                   createdAt: new Date().toISOString(),
                 },
@@ -150,6 +159,12 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const refresh = React.useCallback(async () => {
+    // Don't fetch until auth has actually resolved — `useRole()` returns its "employee"
+    // default the instant this provider mounts, before the real role is known. Fetching
+    // against that guess would hit the wrong (current-user-only) endpoint, and since it's a
+    // different endpoint than the IT-scoped one, whichever response lands second can clobber
+    // the other with a less-complete result.
+    if (authStatus !== "authenticated") return
     dispatch({ type: "loading" })
     try {
       const remote = role === "it" ? await getTickets() : await getCurrentUserTickets()
@@ -157,7 +172,7 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
-  }, [normalize, role])
+  }, [normalize, role, authStatus])
 
   React.useEffect(() => {
     refresh()

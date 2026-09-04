@@ -55,8 +55,8 @@ export async function createLaptop(
   input: CreateLaptopInput,
 ): Promise<string> {
   const { data } = await apiClient.post<{ laptopId: string }>(
-    `/api/laptops/create/`,
-    input,
+    "/api/laptops/create",
+    { userID, ...input },
   );
   return data.laptopId;
 }
