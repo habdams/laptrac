@@ -2,17 +2,17 @@ import * as React from "react"
 import { Box, HStack, Text, VStack } from "@chakra-ui/react"
 import { useAuth } from "../../auth/AuthContext"
 import { LaptopDetailContent } from "../../features/laptops/LaptopDetailContent"
-import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { StatusBadge, laptopStatusTone } from "../common/StatusBadge"
 import { DrawerBody, DrawerCloseTrigger, DrawerContent, DrawerHeader, DrawerRoot, DrawerTitle } from "../ui/drawer"
 
 export function MyLaptopCard() {
   const { user } = useAuth()
-  const { laptops } = useLaptops()
   const [open, setOpen] = React.useState(false)
 
-  const myLaptop = laptops.find((l) => l.assignedToEmail === user?.email)
-  if (!myLaptop) return null
+  if (!user?.laptop) return null
+  const myLaptop = user.laptop
+
+  const status = myLaptop.status ?? "assigned"
 
   return (
     <>
@@ -39,7 +39,7 @@ export function MyLaptopCard() {
               {myLaptop.model}
             </Text>
           </VStack>
-          <StatusBadge label={myLaptop.status.replace("-", " ")} tone={laptopStatusTone[myLaptop.status]} />
+          <StatusBadge label={status.replace("-", " ")} tone={laptopStatusTone[status]} />
         </HStack>
       </Box>
       <DrawerRoot open={open} onOpenChange={(e) => setOpen(e.open)} size="md">
@@ -49,7 +49,7 @@ export function MyLaptopCard() {
             <DrawerTitle>My laptop</DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
-            <LaptopDetailContent laptop={myLaptop} />
+            <LaptopDetailContent laptop={{ ...myLaptop, assignedToName: myLaptop.assignedToName ?? user.name }} />
           </DrawerBody>
         </DrawerContent>
       </DrawerRoot>

@@ -1,8 +1,22 @@
 import { Badge, HStack, Separator, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
-import { conditionLabel, type Laptop } from "./types"
+import { conditionLabel, type LaptopHistoryEntry, type LaptopStatus } from "./types"
 
-export function LaptopDetailContent({ laptop }: { laptop: Laptop }) {
+interface LaptopDetailContentLaptop {
+  assetName: string
+  model: string
+  assetLocation: string
+  employeeDepartment: string
+  price: number
+  condition?: number
+  status?: LaptopStatus
+  assignedToName?: string | null
+  history?: LaptopHistoryEntry[]
+}
+
+export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLaptop }) {
+  const status = laptop.status ?? "assigned"
+  const history = laptop.history ?? []
   return (
     <Stack gap="4">
       <Stack gap="1">
@@ -25,13 +39,13 @@ export function LaptopDetailContent({ laptop }: { laptop: Laptop }) {
           <Text fontSize="xs" color="fg.muted">
             Condition
           </Text>
-          <Text fontSize="sm">{conditionLabel(laptop.condition)}</Text>
+          <Text fontSize="sm">{laptop.condition !== undefined ? conditionLabel(laptop.condition) : "—"}</Text>
         </Stack>
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
             Status
           </Text>
-          <StatusBadge label={laptop.status.replace("-", " ")} tone={laptopStatusTone[laptop.status]} />
+          <StatusBadge label={status.replace("-", " ")} tone={laptopStatusTone[status]} />
         </Stack>
       </HStack>
 
@@ -69,12 +83,12 @@ export function LaptopDetailContent({ laptop }: { laptop: Laptop }) {
         <Text fontSize="sm" fontWeight="semibold">
           History
         </Text>
-        {laptop.history.length === 0 && (
+        {history.length === 0 && (
           <Text fontSize="sm" color="fg.muted">
             No history yet.
           </Text>
         )}
-        {laptop.history.map((entry) => (
+        {history.map((entry) => (
           <Stack key={entry.id} gap="0" borderWidth="1px" borderColor="border" rounded="md" p="3">
             <HStack justify="space-between">
               <Badge colorPalette="gray" variant="subtle" textTransform="capitalize">

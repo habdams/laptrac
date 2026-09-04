@@ -1,8 +1,11 @@
+import type { CurrentUserLaptop } from "../features/users/types"
+
 export interface AuthUser {
-  sub: string
+  id: string
   email: string
   name: string
   role: "it" | "employee"
+  laptop: CurrentUserLaptop | null
 }
 
 export type AuthState =

@@ -1,6 +1,7 @@
 import * as React from "react"
 import type { User } from "oidc-client-ts"
-import { getCurrentUserRole } from "../features/users/usersApi"
+import { getCurrentUser } from "../features/users/usersApi"
+import type { CurrentUser } from "../features/users/types"
 import { setAccessTokenGetter } from "../lib/apiClient"
 import { setAuthAsReady } from "../lib/authTracker"
 import { userManager } from "./oidcConfig"
@@ -11,17 +12,29 @@ type AuthState =
   | { status: "anonymous"; user: null }
   | { status: "authenticated"; user: AuthUser }
 
-function toAuthUser(profile: { sub: string; email?: string; name?: string }, role: AuthUser["role"]): AuthUser {
-  return { sub: profile.sub, email: profile.email ?? "", name: profile.name ?? profile.email ?? "Unknown", role }
+function toAuthUser(current: CurrentUser): AuthUser {
+  const name =
+    current.fullName ||
+    [current.firstName, current.lastName].filter(Boolean).join(" ") ||
+    current.emailAddress ||
+    "Unknown"
+  return {
+    id: current.id,
+    email: current.emailAddress ?? "",
+    name,
+    role: current.role === 1 ? "it" : "employee",
+    laptop: current.userLaptops[0] ?? null,
+  }
 }
 
-// Least-privilege default: a failed role lookup should never grant IT access.
-async function resolveRole(): Promise<AuthUser["role"]> {
+// No OIDC fallback for identity anymore — a failed lookup means we know
+// nothing about this session's identity, so the caller drops to anonymous
+// rather than fabricate a degraded user.
+async function resolveCurrentUser(): Promise<CurrentUser | null> {
   try {
-    const role = await getCurrentUserRole()
-    return role === 1 ? "it" : "employee"
+    return await getCurrentUser()
   } catch {
-    return "employee"
+    return null
   }
 }
 
@@ -58,13 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (user && !user.expired) {
           accessTokenRef.current = user.access_token
           // Unblock apiClient's auth-ready gate now that the token is set — the
-          // role lookup below goes through that same gate, so resolving it any
-          // later (e.g. after setState) deadlocks: the gate waits on "authenticated"
+          // current-user lookup below goes through that same gate, so resolving it
+          // any later (e.g. after setState) deadlocks: the gate waits on "authenticated"
           // state, which waits on this fetch, which waits on the gate.
           setAuthAsReady()
-          const role = await resolveRole()
+          const current = await resolveCurrentUser()
           if (cancelled) return
-          setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
+          if (current) {
+            setState({ status: "authenticated", user: toAuthUser(current) })
+          } else {
+            setState({ status: "anonymous", user: null })
+          }
         } else {
           setAuthAsReady()
           setState({ status: "anonymous", user: null })
@@ -80,8 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleUserLoaded = (user: User) => {
       accessTokenRef.current = user.access_token
       setAuthAsReady()
-      resolveRole().then((role) => {
-        setState({ status: "authenticated", user: toAuthUser(user.profile, role) })
+      resolveCurrentUser().then((current) => {
+        setState(
+          current
+            ? { status: "authenticated", user: toAuthUser(current) }
+            : { status: "anonymous", user: null },
+        )
       })
     }
     const handleUserUnloaded = () => {
