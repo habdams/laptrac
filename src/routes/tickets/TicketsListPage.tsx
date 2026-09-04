@@ -28,7 +28,7 @@ export function Component() {
     if (tab === "claimed" && t.status !== "claimed") return false
     if (tab === "resolved" && t.status !== "resolved") return false
     if (tab === "mine" && t.assignedToEmail !== user?.email) return false
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+    if (search && !(t.title ?? "").toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 

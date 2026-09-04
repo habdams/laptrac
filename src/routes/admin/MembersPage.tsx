@@ -100,14 +100,14 @@ export function Component() {
                   }}
                   onToggleRole={async () => {
                     try {
-                      const role = u.roles.includes(1) ? u.roles.filter((r) => r !== 1) : [...u.roles, 1]
+                      const isCurrentlyIT = u.roles === 1
                       await updateMember(u.id, {
                         email: u.emailAddress ?? "",
                         firstName: u.firstName ?? "",
                         lastName: u.lastName ?? "",
-                        role,
+                        role: isCurrentlyIT ? 0 : 1,
                       })
-                      toaster.create({ type: "success", title: u.roles.includes(1) ? "IT access revoked" : "Made IT member" })
+                      toaster.create({ type: "success", title: isCurrentlyIT ? "IT access revoked" : "Made IT member" })
                     } catch (err) {
                       toaster.create({ type: "error", title: "Couldn't update role", description: getErrorMessage(err) })
                     }
@@ -151,7 +151,7 @@ function MemberRow({
   const [lastName, setLastName] = React.useState(user.lastName ?? "")
   const [saving, setSaving] = React.useState(false)
   const [togglingRole, setTogglingRole] = React.useState(false)
-  const isIT = user.roles.includes(1)
+  const isIT = user.roles === 1
 
   if (editing) {
     return (
@@ -165,7 +165,7 @@ function MemberRow({
         <Table.Cell>
           <Input size="sm" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
         </Table.Cell>
-        <Table.Cell>{user.roles.map(roleLabel).join(", ") || "—"}</Table.Cell>
+        <Table.Cell>{user.roles !== null ? roleLabel(user.roles) : "—"}</Table.Cell>
         <Table.Cell>{user.isActive ? "Yes" : "No"}</Table.Cell>
         <Table.Cell>
           <HStack justify="flex-end">
@@ -194,7 +194,7 @@ function MemberRow({
     <Table.Row>
       <Table.Cell fontWeight="medium">{user.fullName ?? (`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "—")}</Table.Cell>
       <Table.Cell>{user.emailAddress ?? "—"}</Table.Cell>
-      <Table.Cell>{user.roles.map(roleLabel).join(", ") || "—"}</Table.Cell>
+      <Table.Cell>{user.roles !== null ? roleLabel(user.roles) : "—"}</Table.Cell>
       <Table.Cell>{user.isActive ? "Yes" : "No"}</Table.Cell>
       <Table.Cell>
         <HStack justify="flex-end">

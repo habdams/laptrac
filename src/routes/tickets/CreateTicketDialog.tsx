@@ -50,7 +50,7 @@ export function Component() {
       })
 
       users
-        .filter((u) => u.roles.includes(1) && u.emailAddress)
+        .filter((u) => u.roles === 1 && u.emailAddress)
         .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${ticket.title}"`))
       toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
       navigate(`/tickets/${ticket.id}`)
