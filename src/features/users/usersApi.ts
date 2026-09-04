@@ -1,5 +1,5 @@
 import { apiClient } from "../../lib/apiClient"
-import type { CreateUserInput, UpdateUserInput, User } from "./types"
+import type { CreateUserInput, CurrentUser, UpdateUserInput, User } from "./types"
 
 interface CreateUserResponse {
   userId: string | null
@@ -11,9 +11,11 @@ export async function getUsers(): Promise<User[]> {
   return data
 }
 
-export async function getCurrentUserRole(): Promise<number> {
-  const { data } = await apiClient.get<{ role: number }>("/api/users/current-user")
-  return data.role
+export async function getCurrentUser(): Promise<CurrentUser> {
+  const { data } = await apiClient.get<CurrentUser[]>("/api/users/current-user")
+  const current = data[0]
+  if (!current) throw new Error("current-user response was empty")
+  return current
 }
 
 export async function createUser(input: CreateUserInput): Promise<CreateUserResponse> {
