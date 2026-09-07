@@ -1,22 +1,27 @@
 import { apiClient } from "../../lib/apiClient"
 
-export interface RemoteTicketHistoryEntry {
-  ticketID: string
-  userLaptopID: string
-  ticketHistoryStatus: number
-  assignedTo: string | null
-  resolvedBy: string | null
-  actionBy: string | null
-  comment: string | null
-  closedAt: string
+// Item shape for the `comments` array below is unconfirmed with backend — read defensively
+// with fallback field names wherever this is consumed (see TicketsContext.normalize()).
+export interface RemoteTicketComment {
+  message?: string
+  comment?: string
+  text?: string
+  authorName?: string
+  author?: string
+  by?: string
+  createdAt?: string
 }
 
+// Flat shape confirmed live 2026-09-07 — replaces an older nested-`ticketHistory` contract
+// with no backend deprecation notice or doc update (see POST_DEMO_TODO.md). `userId` and
+// `description` are gone entirely; `assignedTo` is now a display name, not a user id.
 export interface RemoteTicket {
   id: string
-  userId: string
-  description: string
+  userLaptopID: string | null
   comment: string
-  ticketHistory: RemoteTicketHistoryEntry[]
+  assignedTo: string | null
+  ticketStatus: number | null
+  comments: RemoteTicketComment[]
 }
 
 interface PaginatedListOfTicket {

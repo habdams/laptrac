@@ -17,7 +17,7 @@ const STORAGE_KEY = "laptrac.tickets"
 
 // 0/1/3 confirmed with backend; any other value (e.g. 2) is unconfirmed, default to "open"
 // rather than throw.
-const STATUS_BY_HISTORY: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 3: "resolved" }
+const STATUS_BY_NUMBER: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 3: "resolved" }
 
 interface TicketsState {
   tickets: Ticket[]
@@ -109,61 +109,62 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const stateRef = React.useRef(state)
   stateRef.current = state
 
-  // Backend Ticket is { id, userId, description, comment, ticketHistory } — the comment thread
-  // and laptop link stay as a local overlay keyed by the real ticket id. status and assignedTo
-  // are seeded from ticketHistory the first time a ticket is seen; after that, local
-  // claimTicket/resolveTicket dispatches are the only source (no backend mutation endpoint exists
-  // yet to round-trip a claim/resolve, so once cached, the existing local copy wins for those
-  // fields). The raiser's display name/email is NOT local-only (nothing ever mutates it), so it's
-  // always refreshed from the current `users` list — otherwise it gets permanently stuck on a
-  // fallback if this ticket was first normalized before the member list finished loading.
+  // Backend Ticket is now the flat shape `{ id, userLaptopID, comment, assignedTo, ticketStatus,
+  // comments }` (confirmed live 2026-09-07) — this replaced an older nested-`ticketHistory`
+  // contract with no deprecation notice (see POST_DEMO_TODO.md #6, which still describes the old
+  // shape and needs updating once backend confirms the details flagged below).
   //
-  // `users` is only populated for IT (GET /api/users is IT-only, see MembersContext) — for a
-  // non-IT viewer it's always []. That's fine for the raiser, since a non-IT user only ever sees
-  // their own tickets (getCurrentUserTickets), so r.userId === authUser.id and we can resolve the
-  // name/email from the authenticated user directly instead of the member list. The assignee is
-  // someone else (an IT member), which a non-IT user has no way to resolve to a name without that
-  // list — fall back to a generic "IT team" label rather than leaving it blank.
+  // `userId` is GONE — there is no longer any field identifying who raised a ticket. This is a
+  // real regression for the IT all-tickets view (getTickets()): nothing client-side can resolve
+  // the raiser for someone else's ticket anymore (`userLaptopID` is a laptop-record id, not a
+  // user id — see LaptopsContext.tsx's "backend has no laptop id" comment for why those two ID
+  // spaces differ). `selfScoped` tells us whether these tickets came from getCurrentUserTickets(),
+  // which is scoped server-side to the caller — every ticket from that endpoint belongs to
+  // `authUser` by construction, so the raiser is always known there. For getTickets() (IT viewing
+  // everyone's tickets), fall back to a placeholder rather than fabricate a match.
+  //
+  // `assignedTo` is now a display name (e.g. "Bob"), not a user id — best-effort recover an email
+  // by name match against `users` (IT-only list); this is fragile (breaks on duplicate names) but
+  // degrades to just showing the name, never a wrong name.
+  //
+  // `comments` (plural) is new and its item shape is unconfirmed — read defensively with fallback
+  // field names so an unexpected shape never throws (see RemoteTicketComment in ticketsApi.ts).
   const normalize = React.useCallback(
-    (remote: RemoteTicket[]): Ticket[] => {
+    (remote: RemoteTicket[], selfScoped: boolean): Ticket[] => {
       const existingById = new Map(stateRef.current.tickets.map((t) => [t.id, t]))
       return remote.map((r) => {
         const existing = existingById.get(r.id)
-        const raiser = users.find((u) => u.id === r.userId)
-        const isSelf = r.userId === authUser?.id
-        const raisedByEmail = raiser?.emailAddress ?? (isSelf ? authUser?.email : undefined) ?? r.userId
-        const raisedByName = raiser?.fullName ?? (isSelf ? authUser?.name : undefined) ?? r.userId
+        const raisedByEmail = selfScoped ? (authUser?.email ?? "Unknown employee") : "Unknown employee"
+        const raisedByName = selfScoped ? (authUser?.name ?? "Unknown employee") : "Unknown employee"
 
         if (existing) return { ...existing, raisedByEmail, raisedByName }
 
-        const lastHistory = r.ticketHistory.at(-1)
-        const assignee = lastHistory?.assignedTo ? users.find((u) => u.id === lastHistory.assignedTo) : undefined
+        const assignee = r.assignedTo ? users.find((u) => u.fullName === r.assignedTo) : undefined
+        const status: TicketStatus =
+          r.ticketStatus != null ? (STATUS_BY_NUMBER[r.ticketStatus] ?? "open") : r.assignedTo ? "claimed" : "open"
+
         return {
           id: r.id,
-          title: r.description,
-          summary: r.description,
-          status: lastHistory ? (STATUS_BY_HISTORY[lastHistory.ticketHistoryStatus] ?? "open") : "open",
-          laptopId: null,
+          title: r.comment,
+          summary: r.comment,
+          status,
+          laptopId: r.userLaptopID,
           raisedByEmail,
           raisedByName,
           assignedToEmail: assignee?.emailAddress ?? null,
-          assignedToName: assignee?.fullName ?? (lastHistory?.assignedTo ? "IT team" : null),
+          assignedToName: r.assignedTo,
           createdAt: new Date().toISOString(),
-          comments: r.comment
-            ? [
-                {
-                  id: generateId("comment"),
-                  authorEmail: raisedByEmail,
-                  authorName: raisedByName,
-                  message: r.comment,
-                  createdAt: new Date().toISOString(),
-                },
-              ]
-            : [],
+          comments: (Array.isArray(r.comments) ? r.comments : []).map((c) => ({
+            id: generateId("comment"),
+            authorEmail: c.authorName ?? c.author ?? c.by ?? "Unknown",
+            authorName: c.authorName ?? c.author ?? c.by ?? "Unknown",
+            message: c.message ?? c.comment ?? c.text ?? "",
+            createdAt: c.createdAt ?? new Date().toISOString(),
+          })),
         }
       })
     },
-    [users],
+    [users, authUser],
   )
 
   const refresh = React.useCallback(async () => {
@@ -175,8 +176,9 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
     if (authStatus !== "authenticated") return
     dispatch({ type: "loading" })
     try {
-      const remote = role === "it" ? await getTickets() : await getCurrentUserTickets()
-      dispatch({ type: "loaded", tickets: normalize(remote) })
+      const selfScoped = role !== "it"
+      const remote = selfScoped ? await getCurrentUserTickets() : await getTickets()
+      dispatch({ type: "loaded", tickets: normalize(remote, selfScoped) })
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }

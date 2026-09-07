@@ -52,21 +52,50 @@ refresh-token-based renewal instead of iframe-based `signinSilent()`.
 
 ## Tickets
 
-### 6. No backend endpoint to persist claim/resolve/comment
+### 6. `GET /api/tickets*` contract changed with no notice — several things still unconfirmed
+
+As of 2026-09-07, `GET /api/tickets` and `GET /api/tickets/current-user` return a flat shape —
+`{ id, userLaptopID, comment, assignedTo, ticketStatus, comments }` — replacing the nested
+`ticketHistory` array this doc used to describe (`ticketHistoryStatus`/`assignedTo`/etc. per
+history entry). No deprecation notice or changelog entry came with this; the frontend
+(`src/features/tickets/ticketsApi.ts`, `TicketsContext.tsx`) has been updated to match, using
+best-effort inference where the new contract is ambiguous. **Please confirm/fix the following:**
+
+- The full `ticketStatus` enum. Only `0` (open), `1` (claimed), `3` (resolved) are confirmed
+  (carried over from the old `ticketHistoryStatus`); the frontend guesses `null` means
+  "claimed" when `assignedTo` is set, else "open" — confirm this is actually what `null` means.
+- `assignedTo` is now a **display name string** (e.g. `"Bob"`) instead of a user id. This is a
+  behavior change, not just a rename — the frontend can no longer reliably resolve an email from
+  it (falls back to a fragile name-match against the member list). If duplicate first/full names
+  exist among IT members, this will misattribute — recommend switching back to a stable id.
+- **No field identifies who raised a ticket anymore** (`userId` is gone). For
+  `GET /api/tickets/current-user` this doesn't matter (server-scoped to the caller), but for
+  `GET /api/tickets` (IT's all-tickets view), the raiser is now permanently unresolvable
+  client-side and shows as a placeholder ("Unknown employee"). Please restore an owner id/email
+  on the ticket, or otherwise supported.
+- Confirm `userLaptopID` refers to the `UserLaptop` record's own id (matching
+  `GET /api/users/current-user`'s `userLaptops[].id`) and not a user id — the frontend assumes
+  this to match a ticket to "my own laptop", but has no way to verify it, and the admin bulk
+  `/api/laptops` endpoint (see item below) doesn't expose this id at all, so IT can't resolve the
+  laptop for tickets other than their own.
+- Confirm the shape of `comments[]` items (field names for message/author/timestamp) — currently
+  read defensively with guessed field names (`message`/`comment`/`text`,
+  `authorName`/`author`/`by`, `createdAt`), degrading to blanks rather than crashing if wrong.
+
+### 7. No backend endpoint to persist claim/resolve/comment
 
 `claimTicket`/`resolveTicket`/`addComment` in `src/features/tickets/TicketsContext.tsx` are
-purely local `dispatch()` calls — nothing round-trips to the server. `GET /api/tickets` and
-`GET /api/tickets/current-user` both return a `ticketHistory` array per ticket with real
-status (`ticketHistoryStatus`) and `assignedTo`, but there's no way to *write* a new history
-entry yet. A ticket's status/assignee is only ever read from `ticketHistory` the first time
-the frontend sees that ticket (see `normalize()`) — after that, local claim/resolve actions
-win and are never synced back.
+purely local `dispatch()` calls — nothing round-trips to the server. A ticket's status/assignee
+is only ever read from the server the first time the frontend sees that ticket (see
+`normalize()`) — after that, local claim/resolve actions win and are never synced back. The new
+`comments` field (item 6) suggests the backend may be building toward real persistence here —
+worth checking whether there's already a way to write comments/claims before building more
+local-only overlay.
 
 **Ask backend for:**
-- `POST /api/tickets/{id}/claim` — sets `ticketHistoryStatus = 1`, `assignedTo` = current user (from bearer token, no body needed).
-- `POST /api/tickets/{id}/resolve` — sets `ticketHistoryStatus = 3`, `resolvedBy` = current user.
-- What `ticketHistoryStatus = 2` means — only `0` (open), `1` (claimed), and `3` (resolved) are confirmed; the frontend currently defaults anything else to `"open"`.
-- Some way to persist comments (`TicketComment[]` in the UI) — separate from `ticketHistory.comment` (a single nullable string per history entry), there's no backend endpoint for the comment thread at all today.
+- `POST /api/tickets/{id}/claim` — sets status to claimed, `assignedTo` = current user (from bearer token, no body needed).
+- `POST /api/tickets/{id}/resolve` — sets status to resolved, `resolvedBy` = current user.
+- Some way to persist comments, if `comments[]` (item 6) isn't already writable.
 
 Once these exist, replace the local `dispatch()` calls in `claimTicket`/`resolveTicket` with
 real API calls, and remove the `if (existing) return existing` short-circuit in `normalize()`

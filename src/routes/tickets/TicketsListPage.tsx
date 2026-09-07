@@ -27,7 +27,9 @@ export function Component() {
     if (tab === "open" && t.status !== "open") return false
     if (tab === "claimed" && t.status !== "claimed") return false
     if (tab === "resolved" && t.status !== "resolved") return false
-    if (tab === "mine" && t.assignedToEmail !== user?.email) return false
+    // assignedToEmail is often null now (assignedTo comes back as a name, not an id — see
+    // TicketsContext.normalize()), so fall back to a name match to avoid under-counting.
+    if (tab === "mine" && t.assignedToEmail !== user?.email && t.assignedToName !== user?.name) return false
     if (search && !(t.title ?? "").toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -40,8 +42,11 @@ export function Component() {
 
   // `laptops` (the full IT-only inventory) is empty for non-IT users — fall back to their own
   // laptop from the current-user API, which is the only laptop a non-IT ticket can reference.
+  // Note: `laptopId` is `userLaptopID` (a real UserLaptop record id, matching `user.laptop.id`) —
+  // NOT a user id, so match against `user?.laptop?.id`, not `user?.id`.
   const laptopLabel = (laptopId: string | null) => {
-    const laptop = laptops.find((l) => l.id === laptopId) ?? (laptopId === user?.id ? user?.laptop ?? null : null)
+    const laptop =
+      laptops.find((l) => l.id === laptopId) ?? (laptopId === user?.laptop?.id ? user?.laptop ?? null : null)
     return laptop ? `${laptop.assetName} ${laptop.model}` : "—"
   }
 

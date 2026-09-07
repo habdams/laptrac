@@ -64,9 +64,10 @@ Each feature follows the same pattern: an `xApi.ts` file wrapping typed Axios ca
 
 This is an active demo/MVP integrating against a backend that's still catching up in places. The full list of temporary workarounds and backend asks is tracked in [`POST_DEMO_TODO.md`](./POST_DEMO_TODO.md) — notably:
 
-- Ticket **claim/resolve/comment** are local-only (no backend endpoint to persist them yet); they reset to server truth if the local cache is ever cleared.
+- Ticket **claim/resolve** are local-only (no backend endpoint to persist them yet); they reset to server truth if the local cache is ever cleared. Ticket **comments** are now seeded from the backend but appended-to only locally (no write endpoint confirmed yet).
+- The `GET /api/tickets*` response shape changed without notice on 2026-09-07 (flattened, `assignedTo` is now a name not an id, raiser identity dropped entirely). The frontend was updated with best-effort inference — see `POST_DEMO_TODO.md` #6 for the open questions this raised.
 - The OIDC client currently requires a `client_secret` shipped client-side, which is a security workaround pending a backend config change.
-- Several backend enums (user role labels, laptop condition labels, ticket history status `2`) are undocumented — the frontend shows numeric fallbacks until confirmed.
+- Several backend enums (user role labels, laptop condition labels, ticket status `2`) are undocumented — the frontend shows numeric fallbacks until confirmed.
 
 ## Deployment
 
