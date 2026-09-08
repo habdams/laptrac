@@ -17,6 +17,7 @@ import { toaster } from "../../components/ui/toaster"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
+import { getErrorMessage } from "../../lib/errors"
 
 export function Component() {
   const { id } = useParams<{ id: string }>()
@@ -44,26 +45,39 @@ export function Component() {
     (ticket.laptopId === user?.laptop?.id ? user?.laptop ?? null : null)
   const canManage = role === "it"
 
-  const handleClaim = () => {
+  const handleClaim = async () => {
     if (!user) return
-    claimTicket(ticket.id, { email: user.email, name: user.name })
-    notify(ticket.raisedByEmail, `${user.name} claimed your ticket: "${ticket.title}"`)
-    toaster.create({ type: "info", title: "Ticket claimed", description: "Employee notified by email." })
+    try {
+      await claimTicket(ticket.id)
+      notify(ticket.raisedByEmail, `${user.name} claimed your ticket: "${ticket.title}"`)
+      toaster.create({ type: "info", title: "Ticket claimed", description: "Employee notified by email." })
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't claim ticket", description: getErrorMessage(err) })
+    }
   }
 
-  const handleResolve = () => {
+  const handleResolve = async () => {
     if (!user) return
-    resolveTicket(ticket.id)
-    notify(ticket.raisedByEmail, `Your ticket "${ticket.title}" was resolved by ${user.name}`)
-    toaster.create({ type: "success", title: "Ticket resolved", description: "Employee notified by email." })
+    try {
+      await resolveTicket(ticket.id)
+      notify(ticket.raisedByEmail, `Your ticket "${ticket.title}" was resolved by ${user.name}`)
+      toaster.create({ type: "success", title: "Ticket resolved", description: "Employee notified by email." })
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't resolve ticket", description: getErrorMessage(err) })
+    }
   }
 
-  const handleComment = () => {
+  const handleComment = async () => {
     if (!user || !comment.trim()) return
-    addComment(ticket.id, { authorEmail: user.email, authorName: user.name, message: comment.trim() })
-    const recipient = user.email === ticket.raisedByEmail ? ticket.assignedToEmail : ticket.raisedByEmail
-    if (recipient) notify(recipient, `${user.name} commented on "${ticket.title}"`)
-    setComment("")
+    const message = comment.trim()
+    try {
+      await addComment(ticket.id, message)
+      const recipient = user.email === ticket.raisedByEmail ? ticket.assignedToEmail : ticket.raisedByEmail
+      if (recipient) notify(recipient, `${user.name} commented on "${ticket.title}"`)
+      setComment("")
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't add comment", description: getErrorMessage(err) })
+    }
   }
 
   return (

@@ -101,30 +101,30 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   const stateRef = React.useRef(state)
   stateRef.current = state
 
-  // Backend has no laptop `id`, assign/unassign/status/history endpoints, or serial-number/OS
-  // concept — those stay as a local overlay, keyed by userID, layered on top of each fetch.
+  // Backend laptop IDs are stable UserLaptop IDs. Local assignment/status/history fields remain
+  // an overlay until their write endpoints are integrated.
   const normalize = React.useCallback(
     (remote: RemoteUserLaptop[]): Laptop[] => {
       const existingById = new Map(stateRef.current.laptops.map((l) => [l.id, l]))
       return remote.map((r) => {
-        const existing = existingById.get(r.userID)
-        const owner = users.find((u) => u.id === r.userID)
+        const existing = existingById.get(r.id)
+        const owner = r.userId ? users.find((u) => u.id === r.userId) : undefined
         return {
-          id: r.userID,
+          id: r.id,
           assetName: r.assetName,
           model: r.model,
           comment: r.comment,
           assetLocation: r.assetLocation,
           employeeDepartment: r.employeeDepartment,
-          condition: r.condition,
+          condition: r.condition ?? existing?.condition ?? 0,
           price: r.price,
           estimationUsefulLifeYear: r.estimationUsefulLifeYear ?? "",
           depreciationEstimationDate: r.depreciationEstimationDate ?? "",
           warrantyExpirationDate: r.warrantyExpirationDate ?? "",
           purchaseYear: r.purchaseYear ?? "",
-          status: existing?.status ?? "assigned",
-          assignedToEmail: existing?.assignedToEmail ?? owner?.emailAddress ?? null,
-          assignedToName: existing?.assignedToName ?? owner?.fullName ?? null,
+          status: existing?.status ?? (r.status as LaptopStatus | null) ?? "assigned",
+          assignedToEmail: existing?.assignedToEmail ?? r.assignedToEmail ?? owner?.emailAddress ?? null,
+          assignedToName: existing?.assignedToName ?? r.assignedToName ?? owner?.fullName ?? null,
           history: existing?.history ?? [],
         }
       })
