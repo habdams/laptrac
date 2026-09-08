@@ -1,13 +1,17 @@
 import { apiClient } from "../../lib/apiClient";
 
 export interface RemoteUserLaptop {
-  userID: string;
+  id: string;
+  userId: string | null;
   assetName: string;
   model: string;
   comment: string;
   assetLocation: string;
   employeeDepartment: string;
-  condition: number;
+  condition?: number;
+  assignedToName: string;
+  assignedToEmail: string;
+  status: string | null;
   price: number;
   estimationUsefulLifeYear: string | null;
   depreciationEstimationDate: string | null;
@@ -46,6 +50,17 @@ export async function getLaptops(
     {
       params: { pageNumber, pageSize },
     },
+  );
+  return data.item;
+}
+
+export async function getCurrentUserLaptops(
+  pageNumber = 1,
+  pageSize = 100,
+): Promise<RemoteUserLaptop[]> {
+  const { data } = await apiClient.get<PaginatedListOfUserLaptop>(
+    "/api/laptops/current-user",
+    { params: { pageNumber, pageSize } },
   );
   return data.item;
 }

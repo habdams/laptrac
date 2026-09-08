@@ -1,23 +1,19 @@
 import { apiClient } from "../../lib/apiClient"
 
-// Item shape for the `comments` array below is unconfirmed with backend — read defensively
-// with fallback field names wherever this is consumed (see TicketsContext.normalize()).
 export interface RemoteTicketComment {
-  message?: string
-  comment?: string
-  text?: string
-  authorName?: string
-  author?: string
-  by?: string
-  createdAt?: string
+  id: string
+  ticketId: string | null
+  authorName: string
+  authorEmail: string
+  message: string
+  createdAt: string
 }
 
-// Flat shape confirmed live 2026-09-07 — replaces an older nested-`ticketHistory` contract
-// with no backend deprecation notice or doc update (see POST_DEMO_TODO.md). `userId` and
-// `description` are gone entirely; `assignedTo` is now a display name, not a user id.
 export interface RemoteTicket {
   id: string
+  userId: string
   userLaptopID: string | null
+  description?: string | null
   comment: string
   assignedTo: string | null
   ticketStatus: number | null
@@ -52,8 +48,23 @@ export async function getTicket(ticketId: string): Promise<RemoteTicket> {
 }
 
 export async function createTicket(description: string, comment: string): Promise<string> {
-  // The create-ticket response reuses the same "Response" schema as laptop-create in the API
-  // spec, so the new ticket id comes back (oddly) under the `laptopId` key.
-  const { data } = await apiClient.post<{ laptopId: string }>("/api/tickets/create", { description, comment })
-  return data.laptopId
+  const { data } = await apiClient.post<{ ticketId: string }>("/api/tickets/create", { description, comment })
+  return data.ticketId
+}
+
+export async function addTicketComment(ticketId: string, message: string): Promise<string> {
+  const { data } = await apiClient.post<{ commentId: string }>(`/api/tickets/${ticketId}/add-comment`, { message })
+  return data.commentId
+}
+
+export async function updateTicketStatus(
+  ticketId: string,
+  ticketHistoryStatus: number,
+  comment?: string,
+): Promise<string> {
+  const { data } = await apiClient.put<{ ticketId: string }>(`/api/tickets/${ticketId}/claim-resolve`, {
+    ticketHistoryStatus,
+    comment: comment ?? null,
+  })
+  return data.ticketId
 }

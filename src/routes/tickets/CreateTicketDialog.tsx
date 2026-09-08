@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Button, Field, Input, NativeSelect, Stack, Textarea } from "@chakra-ui/react"
+import { Button, Field, Input, Stack, Textarea } from "@chakra-ui/react"
 import { useNavigate } from "react-router"
 import { useAuth } from "../../auth/AuthContext"
 import {
@@ -24,13 +24,8 @@ export function Component() {
   const { notify } = useNotifications()
   const { users } = useMembers()
 
-  // The signed-in user's own laptop, sourced from /api/users/current-user — not the full
-  // /api/laptops inventory, which is IT-only and never fetched for non-IT users.
-  const myLaptop = user?.laptop ?? null
-
   const [title, setTitle] = React.useState("")
   const [summary, setSummary] = React.useState("")
-  const [laptopId, setLaptopId] = React.useState(myLaptop && user ? user.id : "")
   const [submitting, setSubmitting] = React.useState(false)
 
   const close = () => navigate("/tickets")
@@ -41,12 +36,9 @@ export function Component() {
 
     setSubmitting(true)
     try {
-      const ticket = await createTicket({
+      const ticketId = await createTicket({
         title: title.trim(),
         summary: summary.trim(),
-        laptopId: laptopId || null,
-        raisedByEmail: user.email,
-        raisedByName: user.name,
       })
 
       // `users` is only populated for IT (see MembersContext) — for an employee-filed ticket
@@ -54,9 +46,9 @@ export function Component() {
       // narrower "IT members" endpoint that doesn't require the full directory.
       users
         .filter((u) => u.roles === 1 && u.emailAddress)
-        .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${ticket.title}"`))
+        .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${title.trim()}"`))
       toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
-      navigate(`/tickets/${ticket.id}`)
+      navigate(`/tickets/${ticketId}`)
     } catch (err) {
       toaster.create({ type: "error", title: "Couldn't submit ticket", description: getErrorMessage(err) })
     } finally {
@@ -91,19 +83,6 @@ export function Component() {
                   rows={4}
                 />
               </Field.Root>
-              {myLaptop && user && (
-                <Field.Root>
-                  <Field.Label>Laptop</Field.Label>
-                  <NativeSelect.Root>
-                    <NativeSelect.Field value={laptopId} onChange={(e) => setLaptopId(e.target.value)}>
-                      <option value={user.id}>
-                        {myLaptop.assetName} {myLaptop.model}
-                      </option>
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
-                </Field.Root>
-              )}
             </Stack>
           </DialogBody>
           <DialogFooter>
