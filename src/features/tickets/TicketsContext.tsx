@@ -15,7 +15,7 @@ import {
 import type { Ticket, TicketStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.tickets"
-const STATUS_BY_NUMBER: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 3: "resolved" }
+const STATUS_BY_NUMBER: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 2: "resolved" }
 
 interface TicketsState {
   tickets: Ticket[]
@@ -149,7 +149,7 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
 
   const resolveTicket = React.useCallback(
     async (id: string) => {
-      await updateTicketStatus(id, 3)
+      await updateTicketStatus(id, 2)
       await refresh()
     },
     [refresh],
