@@ -1,6 +1,6 @@
 import { Badge, HStack, Separator, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
-import { conditionLabel, type LaptopHistoryEntry, type LaptopStatus } from "./types"
+import type { LaptopHistoryEntry, LaptopStatus } from "./types"
 
 interface LaptopDetailContentLaptop {
   assetName: string
@@ -8,7 +8,7 @@ interface LaptopDetailContentLaptop {
   assetLocation: string
   employeeDepartment: string
   price: number
-  condition?: number
+  condition?: number//
   status?: LaptopStatus
   assignedToName?: string | null
   history?: LaptopHistoryEntry[]
@@ -35,12 +35,12 @@ export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLap
           </Text>
           <Text fontSize="sm">{laptop.model}</Text>
         </Stack>
-        <Stack gap="0">
+        {/* <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
             Condition
           </Text>
           <Text fontSize="sm">{laptop.condition !== undefined ? conditionLabel(laptop.condition) : "—"}</Text>
-        </Stack>
+        </Stack> */}
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
             Status

@@ -26,7 +26,14 @@ type LaptopsAction =
   | { type: "loaded"; laptops: Laptop[] }
   | { type: "error"; error: string }
   | { type: "add"; laptop: Laptop }
-  | { type: "assign"; id: string; assigneeEmail: string; assigneeName: string; entry: LaptopHistoryEntry }
+  | {
+      type: "assign"
+      id: string
+      assigneeUserId: string
+      assigneeEmail: string
+      assigneeName: string
+      entry: LaptopHistoryEntry
+    }
   | { type: "unassign"; id: string; entry: LaptopHistoryEntry }
   | { type: "status"; id: string; status: LaptopStatus; entry: LaptopHistoryEntry }
 
@@ -48,6 +55,7 @@ function reducer(state: LaptopsState, action: LaptopsAction): LaptopsState {
             ? {
                 ...l,
                 status: "assigned" as LaptopStatus,
+                assignedToUserId: action.assigneeUserId,
                 assignedToEmail: action.assigneeEmail,
                 assignedToName: action.assigneeName,
                 history: [action.entry, ...l.history],
@@ -63,6 +71,7 @@ function reducer(state: LaptopsState, action: LaptopsAction): LaptopsState {
             ? {
                 ...l,
                 status: "available" as LaptopStatus,
+                assignedToUserId: null,
                 assignedToEmail: null,
                 assignedToName: null,
                 history: [action.entry, ...l.history],
@@ -91,7 +100,7 @@ interface LaptopsContextValue {
     assignee: { id: string; email: string; name: string },
     actorName: string,
   ) => Promise<void>
-  unassignLaptop: (id: string, actorName: string) => Promise<void>
+  unassignLaptop: (id: string, userId: string, actorName: string) => Promise<void>
   setLaptopStatus: (id: string, status: LaptopStatus, note: string, actorName: string) => Promise<void>
 }
 
@@ -125,13 +134,14 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           comment: r.comment,
           assetLocation: r.assetLocation,
           employeeDepartment: r.employeeDepartment,
-          condition: r.condition ?? existing?.condition ?? 0,
+          condition: r.condition ?? existing?.condition ?? 0,// we are not using this for now
           price: r.price,
           estimationUsefulLifeYear: r.estimationUsefulLifeYear ?? "",
           depreciationEstimationDate: r.depreciationEstimationDate ?? "",
           warrantyExpirationDate: r.warrantyExpirationDate ?? "",
           purchaseYear: r.purchaseYear ?? "",
           status: existing?.status ?? normalizeLaptopStatus(r.status),
+          assignedToUserId: existing?.assignedToUserId ?? r.userId ?? null,
           assignedToEmail: existing?.assignedToEmail ?? r.assignedToEmail ?? owner?.emailAddress ?? null,
           assignedToName: existing?.assignedToName ?? r.assignedToName ?? owner?.fullName ?? null,
           history: existing?.history ?? [],
@@ -177,6 +187,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
       dispatch({
         type: "assign",
         id,
+        assigneeUserId: assignee.id,
         assigneeEmail: assignee.email,
         assigneeName: assignee.name,
         entry: {
@@ -192,8 +203,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const unassignLaptop = React.useCallback(
-    async (id: string, actorName: string) => {
-      await updateLaptop(id, { userID: null, status: 1, comment: null })
+    async (id: string, userId: string, actorName: string) => {
+      await updateLaptop(id, { userID: userId, status: 1, comment: null })
       dispatch({
         type: "unassign",
         id,

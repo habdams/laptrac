@@ -52,7 +52,10 @@ export function Component() {
     try {
       if (!user) return
       const assignedToEmail = laptop.assignedToEmail
-      await unassignLaptop(laptop.id, user.name)
+      if (!laptop.assignedToUserId) {
+        throw new Error("The assigned user's ID is missing")
+      }
+      await unassignLaptop(laptop.id, laptop.assignedToUserId, user.name)
       if (assignedToEmail) {
         notify(assignedToEmail, `${laptop.assetName} ${laptop.model} has been unassigned from you`)
       }
