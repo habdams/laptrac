@@ -1,4 +1,5 @@
 import { HStack, Separator, Stack, Text } from "@chakra-ui/react"
+import { useRole } from "../../auth/useRole"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
 import { LaptopHistoryTimeline } from "./LaptopHistoryTimeline"
 import type { LaptopHistoryEntry, LaptopStatus } from "./types"
@@ -16,6 +17,7 @@ interface LaptopDetailContentLaptop {
 }
 
 export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLaptop }) {
+  const role = useRole()
   const status = laptop.status ?? "unassigned"
   const history = laptop.history ?? []
   return (
@@ -78,14 +80,17 @@ export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLap
         <Text fontSize="sm">{laptop.assignedToName ?? "Unassigned"}</Text>
       </Stack>
 
-      <Separator />
-
-      <Stack gap="2">
-        <Text fontSize="sm" fontWeight="semibold">
-          History
-        </Text>
-        <LaptopHistoryTimeline entries={history} />
-      </Stack>
+      {role === "it" && (
+        <>
+          <Separator />
+          <Stack gap="2">
+            <Text fontSize="sm" fontWeight="semibold">
+              History
+            </Text>
+            <LaptopHistoryTimeline entries={history} />
+          </Stack>
+        </>
+      )}
     </Stack>
   )
 }

@@ -10,6 +10,7 @@ import {
 import { roleLabel, type User } from "../../features/users/types"
 import { laptopHistoryFromRemote, type Laptop } from "../../features/laptops/types"
 import { LaptopHistoryTimeline } from "../../features/laptops/LaptopHistoryTimeline"
+import { useRole } from "../../auth/useRole"
 
 export function MemberDetailDrawer({
   user,
@@ -22,6 +23,7 @@ export function MemberDetailDrawer({
   open: boolean
   onClose: () => void
 }) {
+  const role = useRole()
   if (!user) return null
   const laptops = user.userLaptops ?? []
 
@@ -73,8 +75,12 @@ export function MemberDetailDrawer({
                     {laptop.assetLocation || "Location unavailable"} · {laptop.employeeDepartment || "Department unavailable"}
                   </Text>
                   <Text fontSize="sm">{laptop.comment || "No laptop comment."}</Text>
-                  <Text fontSize="xs" color="fg.muted">History</Text>
-                  <LaptopHistoryTimeline entries={laptop.history} />
+                  {role === "it" && (
+                    <>
+                      <Text fontSize="xs" color="fg.muted">History</Text>
+                      <LaptopHistoryTimeline entries={laptop.history} />
+                    </>
+                  )}
                 </Stack>
               )}
               {laptops.map((laptop) => (
@@ -86,12 +92,16 @@ export function MemberDetailDrawer({
                     {laptop.assetLocation || "Location unavailable"} · {laptop.employeeDepartment || "Department unavailable"}
                   </Text>
                   <Text fontSize="sm">{laptop.comment || "No laptop comment."}</Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    History
-                  </Text>
-                  <LaptopHistoryTimeline
-                    entries={(laptop.laptopHistories ?? []).map(laptopHistoryFromRemote)}
-                  />
+                  {role === "it" && (
+                    <>
+                      <Text fontSize="xs" color="fg.muted">
+                        History
+                      </Text>
+                      <LaptopHistoryTimeline
+                        entries={(laptop.laptopHistories ?? []).map(laptopHistoryFromRemote)}
+                      />
+                    </>
+                  )}
                 </Stack>
               ))}
             </Stack>
