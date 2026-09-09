@@ -1,4 +1,4 @@
-import { Badge, Box, IconButton, Separator, Stack, Text } from "@chakra-ui/react"
+import { Badge, Box, Button, IconButton, Separator, Stack, Text } from "@chakra-ui/react"
 import { LuBell } from "react-icons/lu"
 import { useAuth } from "../../auth/AuthContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
@@ -7,18 +7,14 @@ import { PopoverBody, PopoverContent, PopoverHeader, PopoverRoot, PopoverTitle, 
 
 export function NotificationBell() {
   const { user } = useAuth()
-  const { forRecipient, unreadFor, markAllRead } = useNotifications()
+  const { forRecipient, unreadFor, markRead } = useNotifications()
   if (!user) return null
 
   const items = forRecipient(user.email)
   const unread = unreadFor(user.email)
 
   return (
-    <PopoverRoot
-      onOpenChange={(e) => {
-        if (e.open) markAllRead(user.email)
-      }}
-    >
+    <PopoverRoot>
       <PopoverTrigger asChild>
         <Box position="relative">
           <IconButton aria-label="Notifications" variant="ghost" size="sm">
@@ -53,10 +49,25 @@ export function NotificationBell() {
             )}
             {items.map((n, i) => (
               <Stack key={n.id} gap="0">
-                <Text fontSize="sm">{n.message}</Text>
-                <Text fontSize="xs" color="fg.muted">
-                  {formatDateTime(n.createdAt)}
-                </Text>
+                <Button
+                  variant="ghost"
+                  justifyContent="flex-start"
+                  whiteSpace="normal"
+                  h="auto"
+                  py="1"
+                  px="0"
+                  fontWeight={n.read ? "normal" : "semibold"}
+                  onClick={() => {
+                    if (!n.read) void markRead(n.id)
+                  }}
+                >
+                  <Stack align="flex-start" gap="0">
+                    <Text fontSize="sm">{n.message}</Text>
+                    <Text fontSize="xs" color="fg.muted">
+                      {formatDateTime(n.createdAt)}
+                    </Text>
+                  </Stack>
+                </Button>
                 {i < items.length - 1 && <Separator mt="2" />}
               </Stack>
             ))}
