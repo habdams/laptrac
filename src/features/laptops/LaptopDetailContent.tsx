@@ -16,7 +16,7 @@ interface LaptopDetailContentLaptop {
 }
 
 export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLaptop }) {
-  const status = laptop.status ?? "assigned"
+  const status = laptop.status ?? "unassigned"
   const history = laptop.history ?? []
   return (
     <Stack gap="4">

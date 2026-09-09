@@ -5,16 +5,28 @@ export type LaptopStatus =
   | "in-repair"
   | "retired";
 
+export const LAPTOP_STATUS_CODES: Record<LaptopStatus, number> = {
+  available: 0,
+  assigned: 1,
+  unassigned: 2,
+  "in-repair": 3,
+  retired: 4,
+};
+
 export function normalizeLaptopStatus(
   status: LaptopStatus | number | string | null | undefined,
 ): LaptopStatus {
+  if (typeof status === "string" && /^\d+$/.test(status)) {
+    status = Number(status);
+  }
+
   if (typeof status === "number") {
     return (
       (
         {
           0: "available",
-          1: "unassigned",
-          2: "assigned",
+          1: "assigned",
+          2: "unassigned",
           3: "in-repair",
           4: "retired",
         } as Record<number, LaptopStatus>
@@ -58,7 +70,14 @@ export function laptopHistoryFromRemote(entry: RemoteLaptopHistory): LaptopHisto
   const status = normalizeLaptopStatus(entry.userLaptopHistoryStatus);
   return {
     id: entry.id,
-    type: status === "assigned" ? "assigned" : status === "unassigned" ? "unassigned" : status === "in-repair" ? "repair" : "note",
+    type:
+      status === "assigned"
+        ? "assigned"
+        : status === "unassigned"
+          ? "unassigned"
+          : status === "in-repair"
+            ? "repair"
+            : "note",
     note: entry.comment ?? "No comment",
     actorName: entry.actionByName,
     createdAt: entry.createdAt,
