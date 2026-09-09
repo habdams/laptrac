@@ -1,5 +1,4 @@
 import {
-  InMemoryWebStorage,
   UserManager,
   WebStorageStateStore,
   type UserManagerSettings,
@@ -33,9 +32,10 @@ const settings: UserManagerSettings = {
   scope: SCOPE,
   response_type: "code",
   automaticSilentRenew: true,
-  // Token kept in-memory only (not localStorage/sessionStorage) — lost on refresh by design;
-  // recovered via signinSilent() against the IdP's own SSO session on app load.
-  userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+  // Keep the OIDC user in sessionStorage so a browser refresh preserves the session while
+  // closing the tab clears it. This also avoids requiring third-party cookies for recovery
+  // through signinSilent() on every refresh.
+  userStore: new WebStorageStateStore({ store: window.sessionStorage }),
   // stateStore must survive the full-page redirect to the IdP and back (an in-memory store
   // would be wiped by that navigation, breaking signinRedirectCallback), so this stays in
   // sessionStorage — it only ever holds the transient PKCE verifier/nonce, not the session itself.
