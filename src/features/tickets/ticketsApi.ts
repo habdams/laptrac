@@ -10,10 +10,10 @@ export interface RemoteTicketComment {
 }
 
 export interface RemoteTicket {
-  id: string
-  userId: string
   userLaptopID: string | null
-  description?: string | null
+  id: string
+  ownerId: string
+  ownerName: string
   comment: string
   assignedTo: string | null
   ticketStatus: number | null
