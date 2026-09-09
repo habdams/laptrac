@@ -20,7 +20,7 @@ export interface RemoteTicket {
   comments: RemoteTicketComment[]
 }
 
-interface PaginatedListOfTicket {
+export interface PaginatedListOfTicket {
   pageIndex: number
   totalPages: number
   item: RemoteTicket[]
@@ -28,18 +28,18 @@ interface PaginatedListOfTicket {
   hasNextPage: boolean
 }
 
-export async function getTickets(pageNumber = 1, pageSize = 100): Promise<RemoteTicket[]> {
+export async function getTickets(pageNumber = 1, pageSize = 20): Promise<PaginatedListOfTicket> {
   const { data } = await apiClient.get<PaginatedListOfTicket>("/api/tickets", {
     params: { pageNumber, pageSize },
   })
-  return data.item
+  return data
 }
 
-export async function getCurrentUserTickets(pageNumber = 1, pageSize = 100): Promise<RemoteTicket[]> {
+export async function getCurrentUserTickets(pageNumber = 1, pageSize = 20): Promise<PaginatedListOfTicket> {
   const { data } = await apiClient.get<PaginatedListOfTicket>("/api/tickets/current-user", {
     params: { pageNumber, pageSize },
   })
-  return data.item
+  return data
 }
 
 export async function getTicket(ticketId: string): Promise<RemoteTicket> {

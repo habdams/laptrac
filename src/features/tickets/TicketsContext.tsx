@@ -15,17 +15,29 @@ import {
 import type { Ticket, TicketStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.tickets"
+const PAGE_SIZE = 20
 const STATUS_BY_NUMBER: Record<number, TicketStatus> = { 0: "open", 1: "claimed", 2: "resolved" }
 
 interface TicketsState {
   tickets: Ticket[]
   status: "idle" | "loading" | "loaded" | "error"
   error: string | null
+  pageIndex: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
 }
 
 type TicketsAction =
   | { type: "loading" }
-  | { type: "loaded"; tickets: Ticket[] }
+  | {
+      type: "loaded"
+      tickets: Ticket[]
+      pageIndex: number
+      totalPages: number
+      hasPreviousPage: boolean
+      hasNextPage: boolean
+    }
   | { type: "error"; error: string }
 
 function reducer(state: TicketsState, action: TicketsAction): TicketsState {
@@ -33,7 +45,15 @@ function reducer(state: TicketsState, action: TicketsAction): TicketsState {
     case "loading":
       return { ...state, status: "loading", error: null }
     case "loaded":
-      return { tickets: action.tickets, status: "loaded", error: null }
+      return {
+        tickets: action.tickets,
+        status: "loaded",
+        error: null,
+        pageIndex: action.pageIndex,
+        totalPages: action.totalPages,
+        hasPreviousPage: action.hasPreviousPage,
+        hasNextPage: action.hasNextPage,
+      }
     case "error":
       return { ...state, status: "error", error: action.error }
   }
@@ -49,6 +69,11 @@ interface TicketsContextValue {
   status: TicketsState["status"]
   error: string | null
   refresh: () => Promise<void>
+  pageIndex: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  goToPage: (page: number) => Promise<void>
   createTicket: (input: CreateTicketInput) => Promise<string>
   claimTicket: (id: string) => Promise<void>
   resolveTicket: (id: string) => Promise<void>
@@ -61,9 +86,19 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   const { users } = useMembers()
   const { status: authStatus, user: authUser } = useAuth()
   const role = useRole()
-  const [state, dispatch] = React.useReducer(reducer, undefined, () =>
-    loadState<TicketsState>(STORAGE_KEY, { tickets: [], status: "idle", error: null }),
-  )
+  const [state, dispatch] = React.useReducer(reducer, undefined, () => {
+    const persisted = loadState<Partial<TicketsState>>(STORAGE_KEY, {})
+    return {
+      tickets: persisted.tickets ?? [],
+      status: persisted.status ?? "idle",
+      error: persisted.error ?? null,
+      pageIndex: persisted.pageIndex ?? 1,
+      totalPages: persisted.totalPages ?? 1,
+      hasPreviousPage: persisted.hasPreviousPage ?? false,
+      hasNextPage: persisted.hasNextPage ?? false,
+    }
+  })
+  const pageRef = React.useRef(1)
 
   React.useEffect(() => {
     saveState(STORAGE_KEY, state)
@@ -114,21 +149,41 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
     [authUser, users],
   )
 
-  const refresh = React.useCallback(async () => {
+  const refresh = React.useCallback(async (requestedPage = pageRef.current) => {
     if (authStatus !== "authenticated") return
 
+    pageRef.current = requestedPage
     dispatch({ type: "loading" })
     try {
-      const remote = role === "it" ? await getTickets() : await getCurrentUserTickets()
-      dispatch({ type: "loaded", tickets: normalize(remote) })
+      const response = role === "it"
+        ? await getTickets(requestedPage, PAGE_SIZE)
+        : await getCurrentUserTickets(requestedPage, PAGE_SIZE)
+      dispatch({
+        type: "loaded",
+        tickets: normalize(response.item),
+        pageIndex: response.pageIndex,
+        totalPages: response.totalPages,
+        hasPreviousPage: response.hasPreviousPage,
+        hasNextPage: response.hasNextPage,
+      })
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
   }, [authStatus, normalize, role])
 
   React.useEffect(() => {
+    pageRef.current = 1
     refresh()
   }, [refresh])
+
+  const goToPage = React.useCallback(
+    async (page: number) => {
+      const nextPage = Math.max(1, Math.min(page, stateRef.current.totalPages))
+      if (nextPage === pageRef.current && stateRef.current.status === "loaded") return
+      await refresh(nextPage)
+    },
+    [refresh],
+  )
 
   const createTicket = React.useCallback(
     async (input: CreateTicketInput) => {
@@ -164,8 +219,8 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const value = React.useMemo(
-    () => ({ ...state, refresh, createTicket, claimTicket, resolveTicket, addComment }),
-    [state, refresh, createTicket, claimTicket, resolveTicket, addComment],
+    () => ({ ...state, refresh, goToPage, createTicket, claimTicket, resolveTicket, addComment }),
+    [state, refresh, goToPage, createTicket, claimTicket, resolveTicket, addComment],
   )
 
   return <TicketsContext.Provider value={value}>{children}</TicketsContext.Provider>

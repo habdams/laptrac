@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Box, HStack, Table, Tabs, Text } from "@chakra-ui/react"
+import { Box, Button, HStack, Table, Tabs, Text } from "@chakra-ui/react"
 import { Outlet, useNavigate, useParams } from "react-router"
 import { useAuth } from "../../auth/AuthContext"
 import { useRole } from "../../auth/useRole"
@@ -13,12 +13,20 @@ import { dateKey, dateValue, formatDate, formatDateTime } from "../../lib/dates"
 export function Component() {
   const { user } = useAuth()
   const role = useRole()
-  const { tickets } = useTickets()
+  const { tickets, pageIndex, totalPages, hasPreviousPage, hasNextPage, goToPage } = useTickets()
   const { laptops } = useLaptops()
   const navigate = useNavigate()
   const params = useParams()
   const [tab, setTab] = React.useState("all")
-  const [search, setSearch] = React.useState("")
+  const [search, setSearchState] = React.useState("")
+  const setSearch = (value: string) => {
+    setSearchState(value)
+    void goToPage(1)
+  }
+  const handleTabChange = (value: string) => {
+    setTab(value)
+    void goToPage(1)
+  }
 
   // Visibility is now scoped server-side (getTickets for IT, getCurrentUserTickets otherwise —
   // see TicketsContext.refresh), so `tickets` already only contains what this user may see.
@@ -75,7 +83,7 @@ export function Component() {
         <StatCard label="Total" value={scoped.length} data={[4, 6, 5, 7, 6, scoped.length]} />
       </HStack>
 
-      <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} mb="4" colorPalette="orange">
+      <Tabs.Root value={tab} onValueChange={(e) => handleTabChange(e.value)} mb="4" colorPalette="orange">
         <Tabs.List>
           <Tabs.Trigger value="all">All</Tabs.Trigger>
           <Tabs.Trigger value="open">Open</Tabs.Trigger>
@@ -143,6 +151,20 @@ export function Component() {
           </Table.Body>
         </Table.Root>
       </Box>
+
+      <HStack justify="space-between" mt="4">
+        <Text fontSize="sm" color="fg.muted">
+          Page {pageIndex} of {totalPages}
+        </Text>
+        <HStack>
+          <Button size="sm" variant="outline" disabled={!hasPreviousPage} onClick={() => void goToPage(pageIndex - 1)}>
+            Previous
+          </Button>
+          <Button size="sm" variant="outline" disabled={!hasNextPage} onClick={() => void goToPage(pageIndex + 1)}>
+            Next
+          </Button>
+        </HStack>
+      </HStack>
 
       <Outlet />
     </Box>
