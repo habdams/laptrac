@@ -2,6 +2,7 @@ import * as React from "react"
 import { Button, HStack, NativeSelect, Stack } from "@chakra-ui/react"
 import { Navigate, useNavigate, useParams } from "react-router"
 import { useAuth } from "../../auth/AuthContext"
+import { getErrorMessage } from "../../lib/errors"
 import {
   DrawerBody,
   DrawerCloseTrigger,
@@ -33,27 +34,52 @@ export function Component() {
     return <Navigate to="/laptops" replace />
   }
 
-  const handleAssign = () => {
-    const member = users.find((u) => u.id === assignee)
-    if (!member || !user || !member.emailAddress) return
-    const name = member.fullName ?? member.emailAddress
-    assignLaptop(laptop.id, { email: member.emailAddress, name }, user.name)
-    notify(member.emailAddress, `${laptop.assetName} ${laptop.model} has been assigned to you`)
-    toaster.create({ type: "success", title: "Laptop assigned" })
-    setAssignee("")
-  }
-
-  const handleUnassign = () => {
-    if (!user) return
-    if (laptop.assignedToEmail) {
-      notify(laptop.assignedToEmail, `${laptop.assetName} ${laptop.model} has been unassigned from you`)
+  const handleAssign = async () => {
+    try {
+      const member = users.find((u) => u.id === assignee)
+      if (!member || !user || !member.emailAddress) return
+      const name = member.fullName ?? member.emailAddress
+      await assignLaptop(laptop.id, { id: member.id, email: member.emailAddress, name }, user.name)
+      notify(member.emailAddress, `${laptop.assetName} ${laptop.model} has been assigned to you`)
+      toaster.create({ type: "success", title: "Laptop assigned" })
+      setAssignee("")
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't assign laptop", description: getErrorMessage(err) })
     }
-    unassignLaptop(laptop.id, user.name)
   }
 
-  const handleRepair = () => {
-    if (!user) return
-    setLaptopStatus(laptop.id, "in-repair", "Sent for repair", user.name)
+  const handleUnassign = async () => {
+    try {
+      if (!user) return
+      const assignedToEmail = laptop.assignedToEmail
+      await unassignLaptop(laptop.id, user.name)
+      if (assignedToEmail) {
+        notify(assignedToEmail, `${laptop.assetName} ${laptop.model} has been unassigned from you`)
+      }
+      toaster.create({ type: "success", title: "Laptop unassigned" })
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't unassign laptop", description: getErrorMessage(err) })
+    }
+  }
+
+  const handleRepair = async () => {
+    try {
+      if (!user) return
+      await setLaptopStatus(laptop.id, "in-repair", "Sent for repair", user.name)
+      toaster.create({ type: "success", title: "Laptop sent for repair" })
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't send laptop for repair", description: getErrorMessage(err) })
+    }
+  }
+
+  const handleRetire = async () => {
+    try {
+      if (!user) return
+      await setLaptopStatus(laptop.id, "retired", "Retired", user.name)
+      toaster.create({ type: "success", title: "Laptop retired" })
+    } catch (err) {
+      toaster.create({ type: "error", title: "Couldn't retire laptop", description: getErrorMessage(err) })
+    }
   }
 
   const availableMembers = users.filter((u) => u.emailAddress !== laptop.assignedToEmail)
@@ -97,6 +123,11 @@ export function Component() {
               {laptop.status !== "in-repair" && laptop.status !== "retired" && (
                 <Button size="sm" variant="outline" onClick={handleRepair}>
                   Send for repair
+                </Button>
+              )}
+              {laptop.status !== "retired" && (
+                <Button size="sm" variant="outline" onClick={handleRetire}>
+                  Retire
                 </Button>
               )}
             </HStack>

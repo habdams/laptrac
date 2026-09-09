@@ -41,6 +41,12 @@ export interface CreateLaptopInput {
   purchaseYear: string;
 }
 
+export interface UpdateLaptopInput {
+  userID: string | null;
+  status: number;
+  comment: string | null;
+}
+
 export async function getLaptops(
   pageNumber = 1,
   pageSize = 100,
@@ -74,4 +80,11 @@ export async function createLaptop(
     { userID, ...input },
   );
   return data.laptopId;
+}
+
+export async function updateLaptop(
+  laptopId: string,
+  input: UpdateLaptopInput,
+): Promise<void> {
+  await apiClient.put(`/api/laptops/update/${laptopId}`, input);
 }
