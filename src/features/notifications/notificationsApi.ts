@@ -11,5 +11,5 @@ export async function getNotifications(): Promise<AppNotification[]> {
 export async function markNotificationAsRead(
   notificationId: string,
 ): Promise<void> {
-  await apiClient.put(`/api/users/mark-as-read/${notificationId}`);
+  await apiClient.get(`/api/users/mark-as-read/${notificationId}`);
 }
