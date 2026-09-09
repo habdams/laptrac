@@ -11,7 +11,7 @@ export interface RemoteUserLaptop {
   condition?: number;
   assignedToName: string;
   assignedToEmail: string;
-  status: string | null;
+  status: string | number | null;
   price: number;
   estimationUsefulLifeYear: string | null;
   depreciationEstimationDate: string | null;
