@@ -29,7 +29,7 @@ export function Component() {
   })
 
   const counts = {
-    available: laptops.filter((l) => l.status === "available").length,
+    available: laptops.filter((l) => l.status === "available" || l.status === "unassigned").length,
     assigned: laptops.filter((l) => l.status === "assigned").length,
     inRepair: laptops.filter((l) => l.status === "in-repair").length,
   }

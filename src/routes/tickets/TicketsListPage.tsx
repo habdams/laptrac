@@ -63,9 +63,9 @@ export function Component() {
         <Text fontSize="2xl" fontWeight="bold">
           Tickets
         </Text>
-        <Text color="fg.muted" fontSize="sm">
+        {/* <Text color="fg.muted" fontSize="sm">
           {scoped.length} total
-        </Text>
+        </Text> */}
       </Box>
 
       <HStack gap="4" mb="6" wrap="wrap">
