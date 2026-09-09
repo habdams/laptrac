@@ -59,6 +59,14 @@ export function Component() {
 
   const handleResolve = async () => {
     if (!user) return
+    if (ticket.comments.length === 0) {
+      toaster.create({
+        type: "error",
+        title: "Add a comment before resolving",
+        description: "A resolution comment is required before this ticket can be resolved.",
+      })
+      return
+    }
     try {
       await resolveTicket(ticket.id)
       notify(ticket.raisedByEmail, `Your ticket "${ticket.title}" was resolved by ${user.name}`)

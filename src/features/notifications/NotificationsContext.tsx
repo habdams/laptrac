@@ -1,5 +1,6 @@
 import * as React from "react"
 import { generateId } from "../../lib/id"
+import { dateValue } from "../../lib/dates"
 import { loadState, saveState } from "../../lib/persist"
 import type { AppNotification } from "./types"
 
@@ -65,7 +66,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     [notifications],
   )
   const forRecipient = React.useCallback(
-    (email: string) => notifications.filter((n) => n.recipientEmail === email),
+    (email: string) =>
+      notifications
+        .filter((n) => n.recipientEmail === email)
+        .sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt)),
     [notifications],
   )
 

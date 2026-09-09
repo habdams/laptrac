@@ -8,7 +8,7 @@ import { StatCard } from "../../components/common/StatCard"
 import { StatusBadge, ticketStatusTone } from "../../components/common/StatusBadge"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
-import { formatDate } from "../../lib/dates"
+import { dateKey, dateValue, formatDate, formatDateTime } from "../../lib/dates"
 
 export function Component() {
   const { user } = useAuth()
@@ -33,7 +33,13 @@ export function Component() {
     if (tab === "mine" && t.assignedToEmail !== user?.email && t.assignedToName !== user?.name) return false
     if (search && !(t.title ?? "").toLowerCase().includes(search.toLowerCase())) return false
     return true
-  })
+  }).sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt))
+
+  const dateCounts = filtered.reduce<Record<string, number>>((counts, ticket) => {
+    const key = dateKey(ticket.createdAt)
+    if (key) counts[key] = (counts[key] ?? 0) + 1
+    return counts
+  }, {})
 
   const counts = {
     open: scoped.filter((t) => t.status === "open").length,
@@ -118,7 +124,11 @@ export function Component() {
                 </Table.Cell>
                 <Table.Cell>{ticket.raisedByName}</Table.Cell>
                 <Table.Cell>{ticket.assignedToName ?? "Unclaimed"}</Table.Cell>
-                <Table.Cell>{formatDate(ticket.createdAt)}</Table.Cell>
+                <Table.Cell>
+                  {dateCounts[dateKey(ticket.createdAt)] > 1
+                    ? formatDateTime(ticket.createdAt)
+                    : formatDate(ticket.createdAt)}
+                </Table.Cell>
               </Table.Row>
             ))}
             {filtered.length === 0 && (
