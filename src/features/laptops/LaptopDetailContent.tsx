@@ -1,5 +1,6 @@
-import { Badge, HStack, Separator, Stack, Text } from "@chakra-ui/react"
+import { HStack, Separator, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
+import { LaptopHistoryTimeline } from "./LaptopHistoryTimeline"
 import type { LaptopHistoryEntry, LaptopStatus } from "./types"
 
 interface LaptopDetailContentLaptop {
@@ -83,29 +84,7 @@ export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLap
         <Text fontSize="sm" fontWeight="semibold">
           History
         </Text>
-        {history.length === 0 && (
-          <Text fontSize="sm" color="fg.muted">
-            No history yet.
-          </Text>
-        )}
-        {history.map((entry) => (
-          <Stack key={entry.id} gap="0" borderWidth="1px" borderColor="border" rounded="md" p="3">
-            <HStack justify="space-between">
-              <Badge colorPalette="gray" variant="subtle" textTransform="capitalize">
-                {entry.type}
-              </Badge>
-              <Text fontSize="xs" color="fg.muted">
-                {new Date(entry.createdAt).toLocaleDateString()}
-              </Text>
-            </HStack>
-            <Text fontSize="sm" mt="1">
-              {entry.note}
-            </Text>
-            <Text fontSize="xs" color="fg.muted">
-              by {entry.actorName}
-            </Text>
-          </Stack>
-        ))}
+        <LaptopHistoryTimeline entries={history} />
       </Stack>
     </Stack>
   )

@@ -1,4 +1,4 @@
-import type { LaptopHistoryEntry, LaptopStatus } from "../laptops/types";
+import type { LaptopStatus, RemoteLaptopHistory } from "../laptops/types";
 
 // Role values are undocumented in the API spec — placeholder labels until backend confirms the mapping.
 export const ROLE_LABELS: Record<number, string> = {};
@@ -55,7 +55,7 @@ export interface CurrentUserLaptop {
   depreciationEstimationDate: string | null;
   warrantyExpirationDate: string | null;
   purchaseYear: string | null;
-  laptopHistories?: LaptopHistoryEntry[];
+  laptopHistories?: RemoteLaptopHistory[];
   // Not in the API yet — backend plans to add these; optional so they pass
   // through once available with no further code changes.
   condition?: number;

@@ -1,4 +1,4 @@
-import { Badge, HStack, Separator, Stack, Text } from "@chakra-ui/react"
+import { HStack, Separator, Stack, Text } from "@chakra-ui/react"
 import {
   DrawerBody,
   DrawerCloseTrigger,
@@ -8,7 +8,8 @@ import {
   DrawerTitle,
 } from "../../components/ui/drawer"
 import { roleLabel, type User } from "../../features/users/types"
-import type { Laptop } from "../../features/laptops/types"
+import { laptopHistoryFromRemote, type Laptop } from "../../features/laptops/types"
+import { LaptopHistoryTimeline } from "../../features/laptops/LaptopHistoryTimeline"
 
 export function MemberDetailDrawer({
   user,
@@ -73,16 +74,7 @@ export function MemberDetailDrawer({
                   </Text>
                   <Text fontSize="sm">{laptop.comment || "No laptop comment."}</Text>
                   <Text fontSize="xs" color="fg.muted">History</Text>
-                  {laptop.history.length === 0 ? (
-                    <Text fontSize="sm" color="fg.muted">No history yet.</Text>
-                  ) : (
-                    laptop.history.map((entry) => (
-                      <HStack key={entry.id} justify="space-between">
-                        <Badge variant="subtle">{entry.type}</Badge>
-                        <Text fontSize="xs" color="fg.muted">{entry.note}</Text>
-                      </HStack>
-                    ))
-                  )}
+                  <LaptopHistoryTimeline entries={laptop.history} />
                 </Stack>
               )}
               {laptops.map((laptop) => (
@@ -97,20 +89,9 @@ export function MemberDetailDrawer({
                   <Text fontSize="xs" color="fg.muted">
                     History
                   </Text>
-                  {(laptop.laptopHistories ?? []).length === 0 ? (
-                    <Text fontSize="sm" color="fg.muted">
-                      No history yet.
-                    </Text>
-                  ) : (
-                    laptop.laptopHistories?.map((entry) => (
-                      <HStack key={entry.id} justify="space-between">
-                        <Badge variant="subtle">{entry.type}</Badge>
-                        <Text fontSize="xs" color="fg.muted">
-                          {entry.note}
-                        </Text>
-                      </HStack>
-                    ))
-                  )}
+                  <LaptopHistoryTimeline
+                    entries={(laptop.laptopHistories ?? []).map(laptopHistoryFromRemote)}
+                  />
                 </Stack>
               ))}
             </Stack>
