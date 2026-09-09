@@ -14,7 +14,7 @@ import { toaster } from "../../components/ui/toaster"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { getErrorMessage } from "../../lib/errors"
 
-const CURRENCY_OPTIONS = ["USD", "NGN", "GBP", "EUR"]
+const CURRENCY_OPTIONS = [ "NGN","USD", "GBP", "EUR"]
 
 export function Component() {
   const navigate = useNavigate()
