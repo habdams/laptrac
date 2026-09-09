@@ -2,6 +2,7 @@ import * as React from "react"
 import { Box, HStack, Text, VStack } from "@chakra-ui/react"
 import { useAuth } from "../../auth/AuthContext"
 import { LaptopDetailContent } from "../../features/laptops/LaptopDetailContent"
+import { normalizeLaptopStatus } from "../../features/laptops/types"
 import { StatusBadge, laptopStatusTone } from "../common/StatusBadge"
 import { DrawerBody, DrawerCloseTrigger, DrawerContent, DrawerHeader, DrawerRoot, DrawerTitle } from "../ui/drawer"
 
@@ -12,7 +13,7 @@ export function MyLaptopCard() {
   if (!user?.laptop) return null
   const myLaptop = user.laptop
 
-  const status = myLaptop.status ?? "assigned"
+  const status = normalizeLaptopStatus(myLaptop.status)
 
   return (
     <>
@@ -49,7 +50,9 @@ export function MyLaptopCard() {
             <DrawerTitle>My laptop</DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
-            <LaptopDetailContent laptop={{ ...myLaptop, assignedToName: myLaptop.assignedToName ?? user.name }} />
+            <LaptopDetailContent
+              laptop={{ ...myLaptop, status, assignedToName: myLaptop.assignedToName ?? user.name }}
+            />
           </DrawerBody>
         </DrawerContent>
       </DrawerRoot>

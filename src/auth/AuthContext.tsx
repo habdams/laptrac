@@ -1,5 +1,6 @@
 import * as React from "react"
 import type { User } from "oidc-client-ts"
+import { normalizeLaptopStatus } from "../features/laptops/types"
 import { getCurrentUser } from "../features/users/usersApi"
 import type { CurrentUser } from "../features/users/types"
 import { setAccessTokenGetter } from "../lib/apiClient"
@@ -23,7 +24,9 @@ function toAuthUser(current: CurrentUser): AuthUser {
     email: current.emailAddress ?? "",
     name,
     role: current.role === 1 ? "it" : "employee",
-    laptop: current.userLaptops[0] ?? null,
+    laptop: current.userLaptops[0]
+      ? { ...current.userLaptops[0], status: normalizeLaptopStatus(current.userLaptops[0].status) }
+      : null,
   }
 }
 

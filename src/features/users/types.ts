@@ -55,7 +55,7 @@ export interface CurrentUserLaptop {
   // Not in the API yet — backend plans to add these; optional so they pass
   // through once available with no further code changes.
   condition?: number;
-  status?: LaptopStatus;
+  status?: LaptopStatus | number | null;
   assignedToName?: string | null;
   history?: LaptopHistoryEntry[];
 }

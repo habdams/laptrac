@@ -11,7 +11,7 @@ import {
   type CreateLaptopInput,
   type RemoteUserLaptop,
 } from "./laptopsApi"
-import type { Laptop, LaptopHistoryEntry, LaptopStatus } from "./types"
+import { normalizeLaptopStatus, type Laptop, type LaptopHistoryEntry, type LaptopStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.laptops"
 
@@ -131,7 +131,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           depreciationEstimationDate: r.depreciationEstimationDate ?? "",
           warrantyExpirationDate: r.warrantyExpirationDate ?? "",
           purchaseYear: r.purchaseYear ?? "",
-          status: existing?.status ?? (r.status as LaptopStatus | null) ?? "assigned",
+          status: existing?.status ?? normalizeLaptopStatus(r.status),
           assignedToEmail: existing?.assignedToEmail ?? r.assignedToEmail ?? owner?.emailAddress ?? null,
           assignedToName: existing?.assignedToName ?? r.assignedToName ?? owner?.fullName ?? null,
           history: existing?.history ?? [],
@@ -173,7 +173,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const assignLaptop = React.useCallback(
     async (id: string, assignee: { id: string; email: string; name: string }, actorName: string) => {
-      await updateLaptop(id, { userID: assignee.id, status: 1, comment: null })
+      await updateLaptop(id, { userID: assignee.id, status: 2, comment: null })
       dispatch({
         type: "assign",
         id,
@@ -193,7 +193,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const unassignLaptop = React.useCallback(
     async (id: string, actorName: string) => {
-      await updateLaptop(id, { userID: null, status: 0, comment: null })
+      await updateLaptop(id, { userID: null, status: 1, comment: null })
       dispatch({
         type: "unassign",
         id,
@@ -213,10 +213,10 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
     async (id: string, status: LaptopStatus, note: string, actorName: string) => {
       const statusCode: Record<LaptopStatus, number> = {
         available: 0,
-        unassigned: 0,
-        assigned: 1,
-        "in-repair": 2,
-        retired: 3,
+        unassigned: 1,
+        assigned: 2,
+        "in-repair": 3,
+        retired: 4,
       }
       await updateLaptop(id, { userID: null, status: statusCode[status], comment: note })
       dispatch({
