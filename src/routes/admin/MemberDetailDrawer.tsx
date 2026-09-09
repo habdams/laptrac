@@ -97,12 +97,12 @@ export function MemberDetailDrawer({
                   <Text fontSize="xs" color="fg.muted">
                     History
                   </Text>
-                  {(laptop.history ?? []).length === 0 ? (
+                  {(laptop.laptopHistories ?? []).length === 0 ? (
                     <Text fontSize="sm" color="fg.muted">
                       No history yet.
                     </Text>
                   ) : (
-                    laptop.history?.map((entry) => (
+                    laptop.laptopHistories?.map((entry) => (
                       <HStack key={entry.id} justify="space-between">
                         <Badge variant="subtle">{entry.type}</Badge>
                         <Text fontSize="xs" color="fg.muted">

@@ -55,12 +55,12 @@ export interface CurrentUserLaptop {
   depreciationEstimationDate: string | null;
   warrantyExpirationDate: string | null;
   purchaseYear: string | null;
+  laptopHistories?: LaptopHistoryEntry[];
   // Not in the API yet — backend plans to add these; optional so they pass
   // through once available with no further code changes.
   condition?: number;
   status?: LaptopStatus | number | null;
   assignedToName?: string | null;
-  history?: LaptopHistoryEntry[];
 }
 
 export interface CurrentUser {
