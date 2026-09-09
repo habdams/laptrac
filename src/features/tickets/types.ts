@@ -10,7 +10,7 @@ export interface TicketComment {
 
 export interface Ticket {
   id: string
-  userId: string
+  ownerId: string
   title: string
   summary: string
   status: TicketStatus

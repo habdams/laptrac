@@ -78,21 +78,28 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
 
       return remote.map((ticket) => {
         const existing = existingById.get(ticket.id)
-        const owner = users.find((user) => user.id === ticket.userId)
-        const isCurrentUserOwner = ticket.userId === authUser?.id
-        const assignee = ticket.assignedTo ? users.find((user) => user.id === ticket.assignedTo) : undefined
+        const owner = users.find((user) => user.id === ticket.ownerId)
+        const isCurrentUserOwner = ticket.ownerId === authUser?.id
+        const assignee = ticket.assignedTo
+          ? users.find(
+              (user) =>
+                user.id === ticket.assignedTo ||
+                user.fullName === ticket.assignedTo ||
+                user.emailAddress === ticket.assignedTo,
+            )
+          : undefined
 
         return {
           id: ticket.id,
-          userId: ticket.userId,
-          title: ticket.description ?? ticket.comment,
+          ownerId: ticket.ownerId,
+          title: ticket.comment,
           summary: ticket.comment,
           status: STATUS_BY_NUMBER[ticket.ticketStatus ?? 0] ?? "open",
           laptopId: ticket.userLaptopID,
           raisedByEmail: owner?.emailAddress ?? (isCurrentUserOwner ? authUser?.email : null) ?? "Unknown employee",
-          raisedByName: owner?.fullName ?? (isCurrentUserOwner ? authUser?.name : null) ?? "Unknown employee",
+          raisedByName: ticket.ownerName || owner?.fullName || (isCurrentUserOwner ? authUser?.name : null) || "Unknown employee",
           assignedToEmail: assignee?.emailAddress ?? null,
-          assignedToName: assignee?.fullName ?? null,
+          assignedToName: ticket.assignedTo ?? assignee?.fullName ?? null,
           createdAt: existing?.createdAt ?? new Date().toISOString(),
           comments: ticket.comments.map((comment) => ({
             id: comment.id,
