@@ -183,7 +183,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const assignLaptop = React.useCallback(
     async (id: string, assignee: { id: string; email: string; name: string }, actorName: string) => {
-      await updateLaptop(id, { userID: assignee.id, status: 2, comment: null })
+      await updateLaptop(id, { userID: assignee.id, status: 1, comment: null })
       dispatch({
         type: "assign",
         id,
@@ -204,7 +204,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const unassignLaptop = React.useCallback(
     async (id: string, userId: string, actorName: string) => {
-      await updateLaptop(id, { userID: userId, status: 1, comment: null })
+      await updateLaptop(id, { userID: userId, status: 2, comment: null })
       dispatch({
         type: "unassign",
         id,
