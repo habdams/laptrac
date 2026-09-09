@@ -116,7 +116,7 @@ export function Component() {
                   <StatusBadge label={ticket.status} tone={ticketStatusTone[ticket.status]} />
                 </Table.Cell>
                 <Table.Cell>{ticket.raisedByName}</Table.Cell>
-                <Table.Cell>{ticket.assignedTo ?? "Unclaimed"}</Table.Cell>
+                <Table.Cell>{ticket.assignedToName ?? "Unclaimed"}</Table.Cell>
                 <Table.Cell>{new Date(ticket.createdAt).toLocaleDateString()}</Table.Cell>
               </Table.Row>
             ))}
