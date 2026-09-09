@@ -2,6 +2,7 @@ import { Badge, Box, IconButton, Separator, Stack, Text } from "@chakra-ui/react
 import { LuBell } from "react-icons/lu"
 import { useAuth } from "../../auth/AuthContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
+import { formatDateTime } from "../../lib/dates"
 import { PopoverBody, PopoverContent, PopoverHeader, PopoverRoot, PopoverTitle, PopoverTrigger } from "../ui/popover"
 
 export function NotificationBell() {
@@ -54,7 +55,7 @@ export function NotificationBell() {
               <Stack key={n.id} gap="0">
                 <Text fontSize="sm">{n.message}</Text>
                 <Text fontSize="xs" color="fg.muted">
-                  {new Date(n.createdAt).toLocaleString()}
+                  {formatDateTime(n.createdAt)}
                 </Text>
                 {i < items.length - 1 && <Separator mt="2" />}
               </Stack>

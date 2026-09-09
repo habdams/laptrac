@@ -1,5 +1,6 @@
 import { Box, HStack, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
+import { formatDate, formatTime } from "../../lib/dates"
 import { normalizeLaptopStatus, type LaptopHistoryEntry } from "./types"
 
 export function LaptopHistoryTimeline({ entries }: { entries: LaptopHistoryEntry[] }) {
@@ -37,10 +38,10 @@ export function LaptopHistoryTimeline({ entries }: { entries: LaptopHistoryEntry
             <Stack gap="2" borderWidth="1px" borderColor="border" rounded="md" p="3">
               <HStack justify="space-between" align="start" gap="3">
                 <Text fontSize="sm" fontWeight="semibold">
-                  {new Date(entry.createdAt).toLocaleDateString()}
+                  {formatDate(entry.createdAt)}
                 </Text>
                 <Text fontSize="xs" color="fg.muted">
-                  {new Date(entry.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  {formatTime(entry.createdAt)}
                 </Text>
               </HStack>
               <HStack justify="space-between" align="center" gap="3">
