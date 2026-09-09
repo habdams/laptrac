@@ -1,9 +1,5 @@
 import { apiClient } from "../../lib/apiClient";
-import type {
-  CreateUserInput,
-  CurrentUser,
-  User,
-} from "./types";
+import type { CreateUserInput, CurrentUser, User } from "./types";
 
 export interface PaginatedUsers {
   pageIndex: number;
@@ -18,7 +14,12 @@ interface CreateUserResponse {
   message: string;
 }
 
-async function getUsersPage(path: string, pageNumber: number, pageSize: number, search?: string) {
+async function getUsersPage(
+  path: string,
+  pageNumber: number,
+  pageSize: number,
+  search?: string,
+) {
   const { data } = await apiClient.get<PaginatedUsers | User[]>(path, {
     params: { pageNumber, pageSize, ...(search ? { search } : {}) },
   });
@@ -69,7 +70,7 @@ export async function updateUser(
   role: number,
 ): Promise<CreateUserResponse> {
   const { data } = await apiClient.put<CreateUserResponse>(
-    `/api/users/user/${userId}`,
+    `/api/users/${userId}`,
     { role },
   );
   return data;
