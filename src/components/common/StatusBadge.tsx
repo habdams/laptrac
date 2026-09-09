@@ -25,6 +25,7 @@ export const ticketStatusTone: Record<string, StatusTone> = {
 
 export const laptopStatusTone: Record<string, StatusTone> = {
   available: "green",
+  unassigned: "gray",
   assigned: "blue",
   "in-repair": "orange",
   retired: "gray",
