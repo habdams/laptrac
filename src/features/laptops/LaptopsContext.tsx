@@ -19,6 +19,7 @@ import {
   type LaptopHistoryEntry,
   type LaptopStatus,
 } from "./types"
+import { dateValue } from "../../lib/dates"
 
 const STORAGE_KEY = "laptrac.laptops"
 
@@ -158,7 +159,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
               const withoutDuplicate = entries.filter((item) => item.id !== entry.id)
               return [...withoutDuplicate, entry]
             }, [])
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+            .sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt)),
         }
       })
     },

@@ -1,11 +1,11 @@
 import { Box, HStack, Stack, Text } from "@chakra-ui/react"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
-import { formatDate, formatTime } from "../../lib/dates"
+import { dateValue, formatDate, formatTime } from "../../lib/dates"
 import { normalizeLaptopStatus, type LaptopHistoryEntry } from "./types"
 
 export function LaptopHistoryTimeline({ entries }: { entries: LaptopHistoryEntry[] }) {
   const history = [...entries].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a, b) => dateValue(b.createdAt) - dateValue(a.createdAt),
   )
 
   if (history.length === 0) {
