@@ -13,8 +13,8 @@ export function normalizeLaptopStatus(
       (
         {
           0: "available",
-          1: "assigned",
-          2: "unassigned",
+          1: "unassigned",
+          2: "assigned",
           3: "in-repair",
           4: "retired",
         } as Record<number, LaptopStatus>
@@ -41,6 +41,29 @@ export interface LaptopHistoryEntry {
   note: string;
   actorName: string;
   createdAt: string;
+  status: LaptopStatus;
+}
+
+export interface RemoteLaptopHistory {
+  id: string;
+  userLaptopID: string;
+  actionBy: string;
+  actionByName: string;
+  comment: string | null;
+  createdAt: string;
+  userLaptopHistoryStatus: number;
+}
+
+export function laptopHistoryFromRemote(entry: RemoteLaptopHistory): LaptopHistoryEntry {
+  const status = normalizeLaptopStatus(entry.userLaptopHistoryStatus);
+  return {
+    id: entry.id,
+    type: status === "assigned" ? "assigned" : status === "unassigned" ? "unassigned" : status === "in-repair" ? "repair" : "note",
+    note: entry.comment ?? "No comment",
+    actorName: entry.actionByName,
+    createdAt: entry.createdAt,
+    status,
+  };
 }
 
 // UserLaptopCondition values are undocumented in the API spec — placeholder labels until backend confirms.

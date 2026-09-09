@@ -11,7 +11,13 @@ import {
   type CreateLaptopInput,
   type RemoteUserLaptop,
 } from "./laptopsApi"
-import { normalizeLaptopStatus, type Laptop, type LaptopHistoryEntry, type LaptopStatus } from "./types"
+import {
+  laptopHistoryFromRemote,
+  normalizeLaptopStatus,
+  type Laptop,
+  type LaptopHistoryEntry,
+  type LaptopStatus,
+} from "./types"
 
 const STORAGE_KEY = "laptrac.laptops"
 
@@ -144,7 +150,12 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           assignedToUserId: existing?.assignedToUserId ?? r.userId ?? null,
           assignedToEmail: existing?.assignedToEmail ?? r.assignedToEmail ?? owner?.emailAddress ?? null,
           assignedToName: existing?.assignedToName ?? r.assignedToName ?? owner?.fullName ?? null,
-          history: existing?.history ?? [],
+          history: [...(r.laptopHistories ?? []).map(laptopHistoryFromRemote), ...(existing?.history ?? [])]
+            .reduce<LaptopHistoryEntry[]>((entries, entry) => {
+              const withoutDuplicate = entries.filter((item) => item.id !== entry.id)
+              return [...withoutDuplicate, entry]
+            }, [])
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
         }
       })
     },
@@ -183,7 +194,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const assignLaptop = React.useCallback(
     async (id: string, assignee: { id: string; email: string; name: string }, actorName: string) => {
-      await updateLaptop(id, { userID: assignee.id, status: 1, comment: null })
+      await updateLaptop(id, { userID: assignee.id, status: 2, comment: null })
       dispatch({
         type: "assign",
         id,
@@ -196,6 +207,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           note: `Assigned to ${assignee.name}`,
           actorName,
           createdAt: new Date().toISOString(),
+          status: "assigned",
         },
       })
     },
@@ -204,7 +216,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
 
   const unassignLaptop = React.useCallback(
     async (id: string, userId: string, actorName: string) => {
-      await updateLaptop(id, { userID: userId, status: 2, comment: null })
+      await updateLaptop(id, { userID: userId, status: 1, comment: null })
       dispatch({
         type: "unassign",
         id,
@@ -214,6 +226,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           note: "Unassigned",
           actorName,
           createdAt: new Date().toISOString(),
+          status: "unassigned",
         },
       })
     },
@@ -240,6 +253,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           note,
           actorName,
           createdAt: new Date().toISOString(),
+          status,
         },
       })
     },

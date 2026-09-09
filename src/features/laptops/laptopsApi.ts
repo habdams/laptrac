@@ -1,4 +1,5 @@
 import { apiClient } from "../../lib/apiClient";
+import type { RemoteLaptopHistory } from "./types";
 
 export interface RemoteUserLaptop {
   id: string;
@@ -17,6 +18,7 @@ export interface RemoteUserLaptop {
   depreciationEstimationDate: string | null;
   warrantyExpirationDate: string | null;
   purchaseYear: string | null;
+  laptopHistories?: RemoteLaptopHistory[];
 }
 
 interface PaginatedListOfUserLaptop {
