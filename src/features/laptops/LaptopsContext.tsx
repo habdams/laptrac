@@ -4,7 +4,13 @@ import { getErrorMessage } from "../../lib/errors"
 import { generateId } from "../../lib/id"
 import { loadState, saveState } from "../../lib/persist"
 import { useMembers } from "../users/MembersContext"
-import { createLaptop, getLaptops, type CreateLaptopInput, type RemoteUserLaptop } from "./laptopsApi"
+import {
+  createLaptop,
+  getLaptops,
+  updateLaptop,
+  type CreateLaptopInput,
+  type RemoteUserLaptop,
+} from "./laptopsApi"
 import type { Laptop, LaptopHistoryEntry, LaptopStatus } from "./types"
 
 const STORAGE_KEY = "laptrac.laptops"
@@ -80,9 +86,13 @@ interface LaptopsContextValue {
   error: string | null
   refresh: () => Promise<void>
   addLaptop: (userId: string, input: CreateLaptopInput) => Promise<void>
-  assignLaptop: (id: string, assignee: { email: string; name: string }, actorName: string) => void
-  unassignLaptop: (id: string, actorName: string) => void
-  setLaptopStatus: (id: string, status: LaptopStatus, note: string, actorName: string) => void
+  assignLaptop: (
+    id: string,
+    assignee: { id: string; email: string; name: string },
+    actorName: string,
+  ) => Promise<void>
+  unassignLaptop: (id: string, actorName: string) => Promise<void>
+  setLaptopStatus: (id: string, status: LaptopStatus, note: string, actorName: string) => Promise<void>
 }
 
 const LaptopsContext = React.createContext<LaptopsContextValue | null>(null)
@@ -101,8 +111,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   const stateRef = React.useRef(state)
   stateRef.current = state
 
-  // Backend laptop IDs are stable UserLaptop IDs. Local assignment/status/history fields remain
-  // an overlay until their write endpoints are integrated.
+  // Backend laptop IDs are stable UserLaptop IDs. History remains a local overlay.
   const normalize = React.useCallback(
     (remote: RemoteUserLaptop[]): Laptop[] => {
       const existingById = new Map(stateRef.current.laptops.map((l) => [l.id, l]))
@@ -163,7 +172,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const assignLaptop = React.useCallback(
-    (id: string, assignee: { email: string; name: string }, actorName: string) =>
+    async (id: string, assignee: { id: string; email: string; name: string }, actorName: string) => {
+      await updateLaptop(id, { userID: assignee.id, status: 1, comment: null })
       dispatch({
         type: "assign",
         id,
@@ -176,12 +186,14 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           actorName,
           createdAt: new Date().toISOString(),
         },
-      }),
+      })
+    },
     [],
   )
 
   const unassignLaptop = React.useCallback(
-    (id: string, actorName: string) =>
+    async (id: string, actorName: string) => {
+      await updateLaptop(id, { userID: null, status: 0, comment: null })
       dispatch({
         type: "unassign",
         id,
@@ -192,12 +204,21 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           actorName,
           createdAt: new Date().toISOString(),
         },
-      }),
+      })
+    },
     [],
   )
 
   const setLaptopStatus = React.useCallback(
-    (id: string, status: LaptopStatus, note: string, actorName: string) =>
+    async (id: string, status: LaptopStatus, note: string, actorName: string) => {
+      const statusCode: Record<LaptopStatus, number> = {
+        available: 0,
+        unassigned: 0,
+        assigned: 1,
+        "in-repair": 2,
+        retired: 3,
+      }
+      await updateLaptop(id, { userID: null, status: statusCode[status], comment: note })
       dispatch({
         type: "status",
         id,
@@ -209,7 +230,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           actorName,
           createdAt: new Date().toISOString(),
         },
-      }),
+      })
+    },
     [],
   )
 
