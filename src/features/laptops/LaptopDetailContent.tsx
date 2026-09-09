@@ -72,7 +72,7 @@ export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLap
             Amount
           </Text>
             <Text fontSize="sm">
-              {laptop.price ? `${laptop.currency ?? "USD"} ${laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
+              {laptop.price ? `${laptop.currency ?? "NGN"} ${laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
             </Text>
         </Stack>
         <Stack gap="0">
