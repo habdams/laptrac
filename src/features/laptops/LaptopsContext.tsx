@@ -144,7 +144,7 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           employeeDepartment: r.employeeDepartment,
           condition: r.condition ?? existing?.condition ?? 0,// we are not using this for now
           price: r.price,
-          currency: r.currency ?? existing?.currency ?? "USD",
+          currency: r.currency ?? existing?.currency ?? "NGN",
           receiptUrl: r.receiptUrl ?? r.receipt ?? existing?.receiptUrl ?? null,
           estimationUsefulLifeYear: r.estimationUsefulLifeYear ?? "",
           depreciationEstimationDate: r.depreciationEstimationDate ?? "",

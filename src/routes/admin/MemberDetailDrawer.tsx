@@ -76,7 +76,7 @@ export function MemberDetailDrawer({
                   </Text>
                   <Text fontSize="sm">{laptop.comment || "No laptop comment."}</Text>
                   <Text fontSize="sm">
-                    Amount: {laptop.currency ?? "USD"} {laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    Amount: {laptop.currency ?? "NGN"} {laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </Text>
                   {laptop.receiptUrl && (
                     <a href={laptop.receiptUrl} target="_blank" rel="noreferrer">View receipt</a>

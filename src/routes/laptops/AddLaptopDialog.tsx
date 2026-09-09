@@ -27,7 +27,7 @@ export function Component() {
   const [assetLocation, setAssetLocation] = React.useState("")
   const [employeeDepartment, setEmployeeDepartment] = React.useState("")
   const [price, setPrice] = React.useState("")
-  const [currency, setCurrency] = React.useState("USD")
+  const [currency, setCurrency] = React.useState("NGN")
   const [receipt, setReceipt] = React.useState<File | null>(null)
   const [purchaseYear, setPurchaseYear] = React.useState("")
   const [warrantyExpirationDate, setWarrantyExpirationDate] = React.useState("")
