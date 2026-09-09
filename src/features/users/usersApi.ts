@@ -2,18 +2,44 @@ import { apiClient } from "../../lib/apiClient";
 import type {
   CreateUserInput,
   CurrentUser,
-  UpdateUserInput,
   User,
 } from "./types";
+
+export interface PaginatedUsers {
+  pageIndex: number;
+  totalPages: number;
+  item: User[];
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
 
 interface CreateUserResponse {
   userId: string | null;
   message: string;
 }
 
-export async function getUsers(): Promise<User[]> {
-  const { data } = await apiClient.get<User[]>("/api/users");
+async function getUsersPage(path: string, pageNumber: number, pageSize: number, search?: string) {
+  const { data } = await apiClient.get<PaginatedUsers | User[]>(path, {
+    params: { pageNumber, pageSize, ...(search ? { search } : {}) },
+  });
+  if (Array.isArray(data)) {
+    return {
+      pageIndex: pageNumber,
+      totalPages: 1,
+      item: data,
+      hasPreviousPage: pageNumber > 1,
+      hasNextPage: false,
+    };
+  }
   return data;
+}
+
+export function getUsers(pageNumber = 1, pageSize = 10) {
+  return getUsersPage("/api/users", pageNumber, pageSize);
+}
+
+export function searchUsers(search: string, pageNumber = 1, pageSize = 10) {
+  return getUsersPage("/api/users/search", pageNumber, pageSize, search);
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
@@ -40,17 +66,11 @@ export async function createUser(
 
 export async function updateUser(
   userId: string,
-  input: UpdateUserInput,
+  role: number,
 ): Promise<CreateUserResponse> {
   const { data } = await apiClient.put<CreateUserResponse>(
     `/api/users/user/${userId}`,
-    {
-      email: input.email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      middleName: input.middleName ?? null,
-      role: input.role ?? 0,
-    },
+    { role },
   );
   return data;
 }

@@ -3,8 +3,10 @@ import type { LaptopHistoryEntry, LaptopStatus } from "../laptops/types";
 // Role values are undocumented in the API spec — placeholder labels until backend confirms the mapping.
 export const ROLE_LABELS: Record<number, string> = {};
 
-export function roleLabel(role: number): string {
-  return ROLE_LABELS[role] ?? `Role ${role}`;
+export function roleLabel(role: number | null | undefined): string {
+  if (role === 0) return "Employee";
+  if (role === 1) return "IT member";
+  return role === null || role === undefined ? "—" : `Role ${role}`;
 }
 
 export interface User {
@@ -17,7 +19,8 @@ export interface User {
   fullName: string | null;
   isActive: boolean;
   lastLogin: string | null;
-  roles: number | null;
+  role: number | null;
+  userLaptops?: CurrentUserLaptop[];
 }
 
 export interface CreateUserInput {
