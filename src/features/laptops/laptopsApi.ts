@@ -14,6 +14,9 @@ export interface RemoteUserLaptop {
   assignedToEmail: string;
   status: string | number | null;
   price: number;
+  currency?: string | null;
+  receiptUrl?: string | null;
+  receipt?: string | null;
   estimationUsefulLifeYear: string | null;
   depreciationEstimationDate: string | null;
   warrantyExpirationDate: string | null;
@@ -35,8 +38,9 @@ export interface CreateLaptopInput {
   comment: string;
   assetLocation: string;
   employeeDepartment: string;
-  condition: number;
   price: number;
+  currency: string;
+  receipt?: File | null;
   estimationUsefulLifeYear: string;
   depreciationEstimationDate: string;
   warrantyExpirationDate: string;
@@ -74,12 +78,22 @@ export async function getCurrentUserLaptops(
 }
 
 export async function createLaptop(
-  userID: string,
   input: CreateLaptopInput,
 ): Promise<string> {
+  const { receipt, ...laptopData } = input;
+  const formData = new FormData();
+
+  Object.entries(laptopData).forEach(([key, value]) => {
+    formData.append(key, String(value));
+  });
+
+  if (receipt) {
+    formData.append("receipt", receipt);
+  }
+
   const { data } = await apiClient.post<{ laptopId: string }>(
     "/api/laptops/create",
-    { userID, ...input },
+    formData,
   );
   return data.laptopId;
 }

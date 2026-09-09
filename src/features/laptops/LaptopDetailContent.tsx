@@ -1,4 +1,4 @@
-import { HStack, Separator, Stack, Text } from "@chakra-ui/react"
+import { HStack, Link, Separator, Stack, Text } from "@chakra-ui/react"
 import { useRole } from "../../auth/useRole"
 import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
 import { LaptopHistoryTimeline } from "./LaptopHistoryTimeline"
@@ -13,6 +13,8 @@ interface LaptopDetailContentLaptop {
   condition?: number//
   status?: LaptopStatus
   assignedToName?: string | null
+  currency?: string | null
+  receiptUrl?: string | null
   history?: LaptopHistoryEntry[]
 }
 
@@ -67,9 +69,23 @@ export function LaptopDetailContent({ laptop }: { laptop: LaptopDetailContentLap
         </Stack>
         <Stack gap="0">
           <Text fontSize="xs" color="fg.muted">
-            Price
+            Amount
           </Text>
-          <Text fontSize="sm">{laptop.price ? `$${laptop.price.toLocaleString()}` : "—"}</Text>
+            <Text fontSize="sm">
+              {laptop.price ? `${laptop.currency ?? "USD"} ${laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "—"}
+            </Text>
+        </Stack>
+        <Stack gap="0">
+            <Text fontSize="xs" color="fg.muted">
+              Receipt
+            </Text>
+            {laptop.receiptUrl ? (
+              <Link href={laptop.receiptUrl} target="_blank" rel="noreferrer" color="orange.500">
+                View receipt
+              </Link>
+            ) : (
+              <Text fontSize="sm">—</Text>
+            )}
         </Stack>
       </HStack>
 

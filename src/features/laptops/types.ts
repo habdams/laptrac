@@ -102,6 +102,8 @@ export interface Laptop {
   employeeDepartment: string;
   condition: number;
   price: number;
+  currency: string;
+  receiptUrl: string | null;
   estimationUsefulLifeYear: string;
   depreciationEstimationDate: string;
   warrantyExpirationDate: string;

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Button, Field, Input, NativeSelect, Stack, Textarea } from "@chakra-ui/react"
+import { Button, Field, HStack, Input, NativeSelect, Stack, Textarea } from "@chakra-ui/react"
 import { useNavigate } from "react-router"
 import {
   DialogBody,
@@ -12,25 +12,23 @@ import {
 } from "../../components/ui/dialog"
 import { toaster } from "../../components/ui/toaster"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
-import { useMembers } from "../../features/users/MembersContext"
 import { getErrorMessage } from "../../lib/errors"
 
-const CONDITION_OPTIONS = [0, 1, 2, 3]
+const CURRENCY_OPTIONS = ["USD", "NGN", "GBP", "EUR"]
 
 export function Component() {
   const navigate = useNavigate()
   const { addLaptop } = useLaptops()
-  const { users } = useMembers()
   const [submitting, setSubmitting] = React.useState(false)
 
-  const [userId, setUserId] = React.useState("")
   const [assetName, setAssetName] = React.useState("")
   const [model, setModel] = React.useState("")
   const [comment, setComment] = React.useState("")
   const [assetLocation, setAssetLocation] = React.useState("")
   const [employeeDepartment, setEmployeeDepartment] = React.useState("")
-  const [condition, setCondition] = React.useState(0)
   const [price, setPrice] = React.useState("")
+  const [currency, setCurrency] = React.useState("USD")
+  const [receipt, setReceipt] = React.useState<File | null>(null)
   const [purchaseYear, setPurchaseYear] = React.useState("")
   const [warrantyExpirationDate, setWarrantyExpirationDate] = React.useState("")
   const [depreciationEstimationDate, setDepreciationEstimationDate] = React.useState("")
@@ -42,24 +40,25 @@ export function Component() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userId || !assetName.trim() || !model.trim() || !comment.trim()) return
+    if (!assetName.trim() || !model.trim() || !comment.trim()) return
     setSubmitting(true)
     try {
-      await addLaptop(userId, {
+      await addLaptop({
         assetName: assetName.trim(),
         model: model.trim(),
         comment: comment.trim(),
         assetLocation: assetLocation.trim(),
         employeeDepartment: employeeDepartment.trim(),
-        condition,
         price: Number(price) || 0,
+        currency,
+        receipt,
         estimationUsefulLifeYear: toIso(estimationUsefulLifeYear),
         depreciationEstimationDate: toIso(depreciationEstimationDate),
         warrantyExpirationDate: toIso(warrantyExpirationDate),
         purchaseYear: toIso(purchaseYear),
       })
       toaster.create({ type: "success", title: "Machine added to inventory" })
-      navigate(`/laptops/${userId}`)
+      navigate("/laptops")
     } catch (err) {
       toaster.create({ type: "error", title: "Couldn't add machine", description: getErrorMessage(err) })
     } finally {
@@ -77,20 +76,6 @@ export function Component() {
           </DialogHeader>
           <DialogBody>
             <Stack gap="4">
-              <Field.Root required>
-                <Field.Label>Owner</Field.Label>
-                <NativeSelect.Root>
-                  <NativeSelect.Field value={userId} onChange={(e) => setUserId(e.target.value)}>
-                    <option value="">Select owner...</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.fullName ?? u.emailAddress ?? u.id}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field.Root>
               <Field.Root required>
                 <Field.Label>Asset name</Field.Label>
                 <Input value={assetName} onChange={(e) => setAssetName(e.target.value)} placeholder="e.g. MacBook Pro 14" />
@@ -112,21 +97,45 @@ export function Component() {
                 <Input value={employeeDepartment} onChange={(e) => setEmployeeDepartment(e.target.value)} placeholder="e.g. Engineering" />
               </Field.Root>
               <Field.Root>
-                <Field.Label>Condition</Field.Label>
-                <NativeSelect.Root>
-                  <NativeSelect.Field value={condition} onChange={(e) => setCondition(Number(e.target.value))}>
-                    {CONDITION_OPTIONS.map((c) => (
-                      <option key={c} value={c}>
-                        Condition {c}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <Field.Label>Amount</Field.Label>
+                <HStack>
+                  <NativeSelect.Root width="28">
+                    <NativeSelect.Field value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                      {CURRENCY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                  <Input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    css={{
+                      "&::-webkit-outer-spin-button, &::-webkit-inner-spin-button": {
+                        WebkitAppearance: "none",
+                        margin: 0,
+                      },
+                      MozAppearance: "textfield",
+                    }}
+                  />
+                </HStack>
               </Field.Root>
               <Field.Root>
-                <Field.Label>Price</Field.Label>
-                <Input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="0.00" />
+                <Field.Label>Receipt</Field.Label>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+                  padding="1"
+                />
+                <Field.HelperText>Upload an image or document of the purchase receipt.</Field.HelperText>
               </Field.Root>
               <Field.Root>
                 <Field.Label>Purchase date</Field.Label>

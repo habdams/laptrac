@@ -102,7 +102,7 @@ interface LaptopsContextValue {
   status: LaptopsState["status"]
   error: string | null
   refresh: () => Promise<void>
-  addLaptop: (userId: string, input: CreateLaptopInput) => Promise<void>
+  addLaptop: (input: CreateLaptopInput) => Promise<void>
   assignLaptop: (
     id: string,
     assignee: { id: string; email: string; name: string },
@@ -144,6 +144,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
           employeeDepartment: r.employeeDepartment,
           condition: r.condition ?? existing?.condition ?? 0,// we are not using this for now
           price: r.price,
+          currency: r.currency ?? existing?.currency ?? "USD",
+          receiptUrl: r.receiptUrl ?? r.receipt ?? existing?.receiptUrl ?? null,
           estimationUsefulLifeYear: r.estimationUsefulLifeYear ?? "",
           depreciationEstimationDate: r.depreciationEstimationDate ?? "",
           warrantyExpirationDate: r.warrantyExpirationDate ?? "",
@@ -189,8 +191,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
 
   const addLaptop = React.useCallback(
-    async (userId: string, input: CreateLaptopInput) => {
-      await createLaptop(userId, input)
+    async (input: CreateLaptopInput) => {
+      await createLaptop(input)
       await refresh()
     },
     [refresh],

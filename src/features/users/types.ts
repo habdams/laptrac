@@ -51,6 +51,9 @@ export interface CurrentUserLaptop {
   assetLocation: string;
   employeeDepartment: string;
   price: number;
+  currency?: string | null;
+  receiptUrl?: string | null;
+  receipt?: string | null;
   estimationUsefulLifeYear: string | null;
   depreciationEstimationDate: string | null;
   warrantyExpirationDate: string | null;

@@ -75,6 +75,12 @@ export function MemberDetailDrawer({
                     {laptop.assetLocation || "Location unavailable"} · {laptop.employeeDepartment || "Department unavailable"}
                   </Text>
                   <Text fontSize="sm">{laptop.comment || "No laptop comment."}</Text>
+                  <Text fontSize="sm">
+                    Amount: {laptop.currency ?? "USD"} {laptop.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </Text>
+                  {laptop.receiptUrl && (
+                    <a href={laptop.receiptUrl} target="_blank" rel="noreferrer">View receipt</a>
+                  )}
                   {role === "it" && (
                     <>
                       <Text fontSize="xs" color="fg.muted">History</Text>
