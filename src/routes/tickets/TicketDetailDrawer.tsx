@@ -18,6 +18,7 @@ import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useNotifications } from "../../features/notifications/NotificationsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
 import { getErrorMessage } from "../../lib/errors"
+import { formatDateTime } from "../../lib/dates"
 
 export function Component() {
   const { id } = useParams<{ id: string }>()
@@ -147,7 +148,7 @@ export function Component() {
                       {c.authorName}
                     </Text>
                     <Text fontSize="xs" color="fg.muted">
-                      {new Date(c.createdAt).toLocaleString()}
+                      {formatDateTime(c.createdAt)}
                     </Text>
                   </HStack>
                   <Text fontSize="sm" mt="1">

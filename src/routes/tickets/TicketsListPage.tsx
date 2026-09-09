@@ -8,6 +8,7 @@ import { StatCard } from "../../components/common/StatCard"
 import { StatusBadge, ticketStatusTone } from "../../components/common/StatusBadge"
 import { useLaptops } from "../../features/laptops/LaptopsContext"
 import { useTickets } from "../../features/tickets/TicketsContext"
+import { formatDate } from "../../lib/dates"
 
 export function Component() {
   const { user } = useAuth()
@@ -117,7 +118,7 @@ export function Component() {
                 </Table.Cell>
                 <Table.Cell>{ticket.raisedByName}</Table.Cell>
                 <Table.Cell>{ticket.assignedToName ?? "Unclaimed"}</Table.Cell>
-                <Table.Cell>{new Date(ticket.createdAt).toLocaleDateString()}</Table.Cell>
+                <Table.Cell>{formatDate(ticket.createdAt)}</Table.Cell>
               </Table.Row>
             ))}
             {filtered.length === 0 && (
