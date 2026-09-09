@@ -45,7 +45,7 @@ export function Component() {
       // this is an empty array, so the fan-out below is a no-op until the backend exposes a
       // narrower "IT members" endpoint that doesn't require the full directory.
       users
-        .filter((u) => u.roles === 1 && u.emailAddress)
+        .filter((u) => u.role === 1 && u.emailAddress)
         .forEach((u) => notify(u.emailAddress!, `${user.name} raised a new ticket: "${title.trim()}"`))
       toaster.create({ type: "success", title: "Ticket submitted", description: "IT has been notified by email." })
       navigate(`/tickets/${ticketId}`)
