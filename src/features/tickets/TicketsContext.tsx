@@ -136,6 +136,7 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
           assignedToEmail: assignee?.emailAddress ?? null,
           assignedToName: ticket.assignedTo ?? assignee?.fullName ?? null,
           createdAt: existing?.createdAt ?? new Date().toISOString(),
+          ticketNumber: ticket.ticketNumber,
           comments: ticket.comments.map((comment) => ({
             id: comment.id,
             authorEmail: comment.authorEmail,

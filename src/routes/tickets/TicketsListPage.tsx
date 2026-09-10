@@ -107,7 +107,7 @@ export function Component() {
         <Table.Root size="sm">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeader>Ticket</Table.ColumnHeader>
+              <Table.ColumnHeader>Ticket ID</Table.ColumnHeader>
               <Table.ColumnHeader>Laptop</Table.ColumnHeader>
               <Table.ColumnHeader>Status</Table.ColumnHeader>
               <Table.ColumnHeader>Raised by</Table.ColumnHeader>
@@ -125,7 +125,7 @@ export function Component() {
                 bg={params.id === ticket.id ? "colorPalette.subtle" : undefined}
                 _hover={{ bg: "bg.muted" }}
               >
-                <Table.Cell fontWeight="medium">{ticket.title}</Table.Cell>
+                <Table.Cell fontWeight="medium">{ticket.ticketNumber}</Table.Cell>
                 <Table.Cell>{laptopLabel(ticket.laptopId)}</Table.Cell>
                 <Table.Cell>
                   <StatusBadge label={ticket.status} tone={ticketStatusTone[ticket.status]} />
