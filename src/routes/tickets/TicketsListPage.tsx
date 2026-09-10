@@ -1,59 +1,86 @@
-import * as React from "react"
-import { Box, Button, HStack, Table, Tabs, Text } from "@chakra-ui/react"
-import { Outlet, useNavigate, useParams } from "react-router"
-import { useAuth } from "../../auth/AuthContext"
-import { useRole } from "../../auth/useRole"
-import { SearchToolbar } from "../../components/common/SearchToolbar"
-import { StatCard } from "../../components/common/StatCard"
-import { StatusBadge, ticketStatusTone } from "../../components/common/StatusBadge"
-import { useLaptops } from "../../features/laptops/LaptopsContext"
-import { useTickets } from "../../features/tickets/TicketsContext"
-import { dateKey, dateValue, formatDate, formatDateTime } from "../../lib/dates"
+import * as React from "react";
+import { Box, Button, HStack, Table, Tabs, Text } from "@chakra-ui/react";
+import { Outlet, useNavigate, useParams } from "react-router";
+import { useAuth } from "../../auth/AuthContext";
+import { useRole } from "../../auth/useRole";
+import { SearchToolbar } from "../../components/common/SearchToolbar";
+import { StatCard } from "../../components/common/StatCard";
+import {
+  StatusBadge,
+  ticketStatusTone,
+} from "../../components/common/StatusBadge";
+import { useLaptops } from "../../features/laptops/LaptopsContext";
+import { useTickets } from "../../features/tickets/TicketsContext";
+import {
+  dateKey,
+  dateValue,
+  formatDate,
+  formatDateTime,
+} from "../../lib/dates";
 
 export function Component() {
-  const { user } = useAuth()
-  const role = useRole()
-  const { tickets, pageIndex, totalPages, hasPreviousPage, hasNextPage, goToPage } = useTickets()
-  const { laptops } = useLaptops()
-  const navigate = useNavigate()
-  const params = useParams()
-  const [tab, setTab] = React.useState("all")
-  const [search, setSearchState] = React.useState("")
+  const { user } = useAuth();
+  const role = useRole();
+  const {
+    tickets,
+    pageIndex,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPage,
+  } = useTickets();
+  const { laptops } = useLaptops();
+  const navigate = useNavigate();
+  const params = useParams();
+  const [tab, setTab] = React.useState("all");
+  const [search, setSearchState] = React.useState("");
   const setSearch = (value: string) => {
-    setSearchState(value)
-    void goToPage(1)
-  }
+    setSearchState(value);
+    void goToPage(1);
+  };
   const handleTabChange = (value: string) => {
-    setTab(value)
-    void goToPage(1)
-  }
+    setTab(value);
+    void goToPage(1);
+  };
 
   // Visibility is now scoped server-side (getTickets for IT, getCurrentUserTickets otherwise —
   // see TicketsContext.refresh), so `tickets` already only contains what this user may see.
-  const scoped = tickets
+  const scoped = tickets;
 
-  const filtered = scoped.filter((t) => {
-    if (tab === "open" && t.status !== "open") return false
-    if (tab === "claimed" && t.status !== "claimed") return false
-    if (tab === "resolved" && t.status !== "resolved") return false
-    // assignedToEmail is often null now (assignedTo comes back as a name, not an id — see
-    // TicketsContext.normalize()), so fall back to a name match to avoid under-counting.
-    if (tab === "mine" && t.assignedToEmail !== user?.email && t.assignedToName !== user?.name) return false
-    if (search && !(t.title ?? "").toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  }).sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt))
+  const filtered = scoped
+    .filter((t) => {
+      if (tab === "open" && t.status !== "open") return false;
+      if (tab === "claimed" && t.status !== "claimed") return false;
+      if (tab === "resolved" && t.status !== "resolved") return false;
+      // assignedToEmail is often null now (assignedTo comes back as a name, not an id — see
+      // TicketsContext.normalize()), so fall back to a name match to avoid under-counting.
+      if (tab === "mine" && t.assignedToEmail !== user?.email) {
+        console.log(t?.assignedToEmail, user?.email);
+        return false;
+      }
+      if (
+        search &&
+        !(t.title ?? "").toLowerCase().includes(search.toLowerCase())
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt));
 
-  const dateCounts = filtered.reduce<Record<string, number>>((counts, ticket) => {
-    const key = dateKey(ticket.createdAt)
-    if (key) counts[key] = (counts[key] ?? 0) + 1
-    return counts
-  }, {})
+  const dateCounts = filtered.reduce<Record<string, number>>(
+    (counts, ticket) => {
+      const key = dateKey(ticket.createdAt);
+      if (key) counts[key] = (counts[key] ?? 0) + 1;
+      return counts;
+    },
+    {},
+  );
 
   const counts = {
     open: scoped.filter((t) => t.status === "open").length,
     claimed: scoped.filter((t) => t.status === "claimed").length,
     resolved: scoped.filter((t) => t.status === "resolved").length,
-  }
+  };
 
   // `laptops` (the full IT-only inventory) is empty for non-IT users — fall back to their own
   // laptop from the current-user API, which is the only laptop a non-IT ticket can reference.
@@ -61,9 +88,10 @@ export function Component() {
   // NOT a user id, so match against `user?.laptop?.id`, not `user?.id`.
   const laptopLabel = (laptopId: string | null) => {
     const laptop =
-      laptops.find((l) => l.id === laptopId) ?? (laptopId === user?.laptop?.id ? user?.laptop ?? null : null)
-    return laptop ? `${laptop.assetName} ${laptop.model}` : "—"
-  }
+      laptops.find((l) => l.id === laptopId) ??
+      (laptopId === user?.laptop?.id ? (user?.laptop ?? null) : null);
+    return laptop ? `${laptop.assetName} ${laptop.model}` : "—";
+  };
 
   return (
     <Box>
@@ -77,19 +105,42 @@ export function Component() {
       </Box>
 
       <HStack gap="4" mb="6" wrap="wrap">
-        <StatCard label="Open" value={counts.open} data={[2, 3, 2, 4, 3, counts.open]} />
-        <StatCard label="Claimed" value={counts.claimed} data={[1, 2, 1, 2, 3, counts.claimed]} />
-        <StatCard label="Resolved" value={counts.resolved} data={[3, 4, 5, 4, 6, counts.resolved]} />
-        <StatCard label="Total" value={scoped.length} data={[4, 6, 5, 7, 6, scoped.length]} />
+        <StatCard
+          label="Open"
+          value={counts.open}
+          data={[2, 3, 2, 4, 3, counts.open]}
+        />
+        <StatCard
+          label="Claimed"
+          value={counts.claimed}
+          data={[1, 2, 1, 2, 3, counts.claimed]}
+        />
+        <StatCard
+          label="Resolved"
+          value={counts.resolved}
+          data={[3, 4, 5, 4, 6, counts.resolved]}
+        />
+        <StatCard
+          label="Total"
+          value={scoped.length}
+          data={[4, 6, 5, 7, 6, scoped.length]}
+        />
       </HStack>
 
-      <Tabs.Root value={tab} onValueChange={(e) => handleTabChange(e.value)} mb="4" colorPalette="orange">
+      <Tabs.Root
+        value={tab}
+        onValueChange={(e) => handleTabChange(e.value)}
+        mb="4"
+        colorPalette="orange"
+      >
         <Tabs.List>
           <Tabs.Trigger value="all">All</Tabs.Trigger>
           <Tabs.Trigger value="open">Open</Tabs.Trigger>
           <Tabs.Trigger value="claimed">Claimed</Tabs.Trigger>
           <Tabs.Trigger value="resolved">Resolved</Tabs.Trigger>
-          {role === "it" && <Tabs.Trigger value="mine">Assigned to me</Tabs.Trigger>}
+          {role === "it" && (
+            <Tabs.Trigger value="mine">Assigned to me</Tabs.Trigger>
+          )}
         </Tabs.List>
       </Tabs.Root>
 
@@ -103,7 +154,12 @@ export function Component() {
         />
       </Box>
 
-      <Box borderWidth="1px" borderColor="border" rounded="xl" overflow="hidden">
+      <Box
+        borderWidth="1px"
+        borderColor="border"
+        rounded="xl"
+        overflow="hidden"
+      >
         <Table.Root size="sm">
           <Table.Header>
             <Table.Row>
@@ -125,10 +181,15 @@ export function Component() {
                 bg={params.id === ticket.id ? "colorPalette.subtle" : undefined}
                 _hover={{ bg: "bg.muted" }}
               >
-                <Table.Cell fontWeight="medium">{ticket.ticketNumber}</Table.Cell>
+                <Table.Cell fontWeight="medium">
+                  {ticket.ticketNumber}
+                </Table.Cell>
                 <Table.Cell>{laptopLabel(ticket.laptopId)}</Table.Cell>
                 <Table.Cell>
-                  <StatusBadge label={ticket.status} tone={ticketStatusTone[ticket.status]} />
+                  <StatusBadge
+                    label={ticket.status}
+                    tone={ticketStatusTone[ticket.status]}
+                  />
                 </Table.Cell>
                 <Table.Cell>{ticket.raisedByName}</Table.Cell>
                 <Table.Cell>{ticket.assignedToName ?? "Unclaimed"}</Table.Cell>
@@ -142,7 +203,12 @@ export function Component() {
             {filtered.length === 0 && (
               <Table.Row>
                 <Table.Cell colSpan={6}>
-                  <Text color="fg.muted" fontSize="sm" py="6" textAlign="center">
+                  <Text
+                    color="fg.muted"
+                    fontSize="sm"
+                    py="6"
+                    textAlign="center"
+                  >
                     No tickets found.
                   </Text>
                 </Table.Cell>
@@ -157,10 +223,20 @@ export function Component() {
           Page {pageIndex} of {totalPages}
         </Text>
         <HStack>
-          <Button size="sm" variant="outline" disabled={!hasPreviousPage} onClick={() => void goToPage(pageIndex - 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!hasPreviousPage}
+            onClick={() => void goToPage(pageIndex - 1)}
+          >
             Previous
           </Button>
-          <Button size="sm" variant="outline" disabled={!hasNextPage} onClick={() => void goToPage(pageIndex + 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!hasNextPage}
+            onClick={() => void goToPage(pageIndex + 1)}
+          >
             Next
           </Button>
         </HStack>
@@ -168,5 +244,5 @@ export function Component() {
 
       <Outlet />
     </Box>
-  )
+  );
 }

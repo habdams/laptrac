@@ -16,6 +16,7 @@ export interface RemoteTicket {
   ownerName: string;
   comment: string;
   assignedTo: string | null;
+  assignedToEmail: string;
   ticketStatus: number | null;
   ticketNumber: string;
   comments: RemoteTicketComment[];

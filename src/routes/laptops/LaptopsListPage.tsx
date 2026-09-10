@@ -1,42 +1,54 @@
-import * as React from "react"
-import { Box, Button, HStack, Table, Text } from "@chakra-ui/react"
-import { Navigate, Outlet, useNavigate, useParams } from "react-router"
-import { useRole } from "../../auth/useRole"
-import { SearchToolbar } from "../../components/common/SearchToolbar"
-import { StatCard } from "../../components/common/StatCard"
-import { StatusBadge, laptopStatusTone } from "../../components/common/StatusBadge"
-import { useLaptops } from "../../features/laptops/LaptopsContext"
+import * as React from "react";
+import { Box, Button, HStack, Table, Text } from "@chakra-ui/react";
+import { Navigate, Outlet, useNavigate, useParams } from "react-router";
+import { useRole } from "../../auth/useRole";
+import { SearchToolbar } from "../../components/common/SearchToolbar";
+import { StatCard } from "../../components/common/StatCard";
+import {
+  StatusBadge,
+  laptopStatusTone,
+} from "../../components/common/StatusBadge";
+import { useLaptops } from "../../features/laptops/LaptopsContext";
 
 export function Component() {
-  const role = useRole()
-  const { laptops, pageIndex, totalPages, hasPreviousPage, hasNextPage, goToPage } = useLaptops()
-  const navigate = useNavigate()
-  const params = useParams()
-  const [search, setSearchState] = React.useState("")
+  const role = useRole();
+  const {
+    laptops,
+    pageIndex,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPage,
+  } = useLaptops();
+  const navigate = useNavigate();
+  const params = useParams();
+  const [search, setSearchState] = React.useState("");
   const setSearch = (value: string) => {
-    setSearchState(value)
-    void goToPage(1)
-  }
+    setSearchState(value);
+    void goToPage(1);
+  };
 
   if (role !== "it") {
-    return <Navigate to="/tickets" replace />
+    return <Navigate to="/tickets" replace />;
   }
 
   const filtered = laptops.filter((l) => {
-    if (!search) return true
-    const q = search.toLowerCase()
+    if (!search) return true;
+    const q = search.toLowerCase();
     return (
       l.assetName.toLowerCase().includes(q) ||
       l.model.toLowerCase().includes(q) ||
       (l.assignedToName ?? "").toLowerCase().includes(q)
-    )
-  })
+    );
+  });
 
   const counts = {
-    available: laptops.filter((l) => l.status === "available" || l.status === "unassigned").length,
+    available: laptops.filter(
+      (l) => l.status === "available" || l.status === "unassigned",
+    ).length,
     assigned: laptops.filter((l) => l.status === "assigned").length,
     inRepair: laptops.filter((l) => l.status === "in-repair").length,
-  }
+  };
 
   return (
     <Box>
@@ -50,10 +62,26 @@ export function Component() {
       </Box>
 
       <HStack gap="4" mb="6" wrap="wrap">
-        <StatCard label="Total" value={laptops.length} data={[5, 6, 6, 7, 7, laptops.length]} />
-        <StatCard label="Available" value={counts.available} data={[2, 2, 3, 2, 3, counts.available]} />
-        <StatCard label="Assigned" value={counts.assigned} data={[3, 3, 4, 4, 4, counts.assigned]} />
-        <StatCard label="In repair" value={counts.inRepair} data={[0, 1, 1, 1, 1, counts.inRepair]} />
+        <StatCard
+          label="Total"
+          value={laptops.length}
+          data={[5, 6, 6, 7, 7, laptops.length]}
+        />
+        <StatCard
+          label="Available"
+          value={counts.available}
+          data={[2, 2, 3, 2, 3, counts.available]}
+        />
+        <StatCard
+          label="Assigned"
+          value={counts.assigned}
+          data={[3, 3, 4, 4, 4, counts.assigned]}
+        />
+        <StatCard
+          label="In repair"
+          value={counts.inRepair}
+          data={[0, 1, 1, 1, 1, counts.inRepair]}
+        />
       </HStack>
 
       <Box mb="4">
@@ -66,7 +94,12 @@ export function Component() {
         />
       </Box>
 
-      <Box borderWidth="1px" borderColor="border" rounded="xl" overflow="hidden">
+      <Box
+        borderWidth="1px"
+        borderColor="border"
+        rounded="xl"
+        overflow="hidden"
+      >
         <Table.Root size="sm">
           <Table.Header>
             <Table.Row>
@@ -90,16 +123,30 @@ export function Component() {
                 <Table.Cell fontWeight="medium">{laptop.assetName}</Table.Cell>
                 <Table.Cell>{laptop.model}</Table.Cell>
                 <Table.Cell>{laptop.employeeDepartment || "—"}</Table.Cell>
-                <Table.Cell>{laptop.assignedToName ?? "Unassigned"}</Table.Cell>
+                <Table.Cell>{laptop.assignedToName ?? "-"}</Table.Cell>
                 <Table.Cell>
-                  <StatusBadge label={laptop.status.replace("-", " ")} tone={laptopStatusTone[laptop.status]} />
+                  <StatusBadge
+                    label={laptop.status.replace("-", " ")}
+                    tone={laptopStatusTone[laptop.status]}
+                  />
+
+                  {!laptop.assignedToName ? (
+                    <StatusBadge label="Unassigned" tone="green" />
+                  ) : (
+                    <></>
+                  )}
                 </Table.Cell>
               </Table.Row>
             ))}
             {filtered.length === 0 && (
               <Table.Row>
                 <Table.Cell colSpan={5}>
-                  <Text color="fg.muted" fontSize="sm" py="6" textAlign="center">
+                  <Text
+                    color="fg.muted"
+                    fontSize="sm"
+                    py="6"
+                    textAlign="center"
+                  >
                     No laptops found.
                   </Text>
                 </Table.Cell>
@@ -114,10 +161,20 @@ export function Component() {
           Page {pageIndex} of {totalPages}
         </Text>
         <HStack>
-          <Button size="sm" variant="outline" disabled={!hasPreviousPage} onClick={() => void goToPage(pageIndex - 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!hasPreviousPage}
+            onClick={() => void goToPage(pageIndex - 1)}
+          >
             Previous
           </Button>
-          <Button size="sm" variant="outline" disabled={!hasNextPage} onClick={() => void goToPage(pageIndex + 1)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!hasNextPage}
+            onClick={() => void goToPage(pageIndex + 1)}
+          >
             Next
           </Button>
         </HStack>
@@ -125,5 +182,5 @@ export function Component() {
 
       <Outlet />
     </Box>
-  )
+  );
 }
