@@ -96,6 +96,7 @@ export function Component() {
         <DrawerHeader>
           <Stack gap="1">
             <DrawerTitle>{ticket.title}</DrawerTitle>
+            <Text fontSize="xs">{ticket.ticketNumber}</Text>
             <StatusBadge label={ticket.status} tone={ticketStatusTone[ticket.status]} />
           </Stack>
         </DrawerHeader>
