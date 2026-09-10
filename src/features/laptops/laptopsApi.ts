@@ -24,7 +24,7 @@ export interface RemoteUserLaptop {
   laptopHistories?: RemoteLaptopHistory[];
 }
 
-interface PaginatedListOfUserLaptop {
+export interface PaginatedListOfUserLaptop {
   pageIndex: number;
   totalPages: number;
   item: RemoteUserLaptop[];
@@ -55,26 +55,26 @@ export interface UpdateLaptopInput {
 
 export async function getLaptops(
   pageNumber = 1,
-  pageSize = 100,
-): Promise<RemoteUserLaptop[]> {
+  pageSize = 20,
+): Promise<PaginatedListOfUserLaptop> {
   const { data } = await apiClient.get<PaginatedListOfUserLaptop>(
     "/api/laptops",
     {
       params: { pageNumber, pageSize },
     },
   );
-  return data.item;
+  return data;
 }
 
 export async function getCurrentUserLaptops(
   pageNumber = 1,
-  pageSize = 100,
-): Promise<RemoteUserLaptop[]> {
+  pageSize = 20,
+): Promise<PaginatedListOfUserLaptop> {
   const { data } = await apiClient.get<PaginatedListOfUserLaptop>(
     "/api/laptops/current-user",
     { params: { pageNumber, pageSize } },
   );
-  return data.item;
+  return data;
 }
 
 export async function createLaptop(

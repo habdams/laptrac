@@ -22,16 +22,28 @@ import {
 import { dateValue } from "../../lib/dates"
 
 const STORAGE_KEY = "laptrac.laptops"
+const PAGE_SIZE = 20
 
 interface LaptopsState {
   laptops: Laptop[]
   status: "idle" | "loading" | "loaded" | "error"
   error: string | null
+  pageIndex: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
 }
 
 type LaptopsAction =
   | { type: "loading" }
-  | { type: "loaded"; laptops: Laptop[] }
+  | {
+      type: "loaded"
+      laptops: Laptop[]
+      pageIndex: number
+      totalPages: number
+      hasPreviousPage: boolean
+      hasNextPage: boolean
+    }
   | { type: "error"; error: string }
   | { type: "add"; laptop: Laptop }
   | {
@@ -50,7 +62,15 @@ function reducer(state: LaptopsState, action: LaptopsAction): LaptopsState {
     case "loading":
       return { ...state, status: "loading", error: null }
     case "loaded":
-      return { laptops: action.laptops, status: "loaded", error: null }
+      return {
+        laptops: action.laptops,
+        status: "loaded",
+        error: null,
+        pageIndex: action.pageIndex,
+        totalPages: action.totalPages,
+        hasPreviousPage: action.hasPreviousPage,
+        hasNextPage: action.hasNextPage,
+      }
     case "error":
       return { ...state, status: "error", error: action.error }
     case "add":
@@ -101,7 +121,12 @@ interface LaptopsContextValue {
   laptops: Laptop[]
   status: LaptopsState["status"]
   error: string | null
-  refresh: () => Promise<void>
+  refresh: (page?: number) => Promise<void>
+  pageIndex: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  goToPage: (page: number) => Promise<void>
   addLaptop: (input: CreateLaptopInput) => Promise<void>
   assignLaptop: (
     id: string,
@@ -117,9 +142,19 @@ const LaptopsContext = React.createContext<LaptopsContextValue | null>(null)
 export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   const role = useRole()
   const { users } = useMembers()
-  const [state, dispatch] = React.useReducer(reducer, undefined, () =>
-    loadState<LaptopsState>(STORAGE_KEY, { laptops: [], status: "idle", error: null }),
-  )
+  const [state, dispatch] = React.useReducer(reducer, undefined, () => {
+    const persisted = loadState<Partial<LaptopsState>>(STORAGE_KEY, {})
+    return {
+      laptops: persisted.laptops ?? [],
+      status: persisted.status ?? "idle",
+      error: persisted.error ?? null,
+      pageIndex: persisted.pageIndex ?? 1,
+      totalPages: persisted.totalPages ?? 1,
+      hasPreviousPage: persisted.hasPreviousPage ?? false,
+      hasNextPage: persisted.hasNextPage ?? false,
+    }
+  })
+  const pageRef = React.useRef(1)
 
   React.useEffect(() => {
     saveState(STORAGE_KEY, state)
@@ -172,23 +207,48 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   // list/detail/create flows). Non-IT users get their own laptop from /api/users/current-user
   // instead, so skip this fetch for them rather than shipping every employee's asset record to
   // every employee.
-  const refresh = React.useCallback(async () => {
+  const refresh = React.useCallback(async (requestedPage = pageRef.current) => {
     if (role !== "it") {
-      dispatch({ type: "loaded", laptops: [] })
+      dispatch({
+        type: "loaded",
+        laptops: [],
+        pageIndex: 1,
+        totalPages: 1,
+        hasPreviousPage: false,
+        hasNextPage: false,
+      })
       return
     }
+    pageRef.current = requestedPage
     dispatch({ type: "loading" })
     try {
-      const remote = await getLaptops()
-      dispatch({ type: "loaded", laptops: normalize(remote) })
+      const response = await getLaptops(requestedPage, PAGE_SIZE)
+      dispatch({
+        type: "loaded",
+        laptops: normalize(response.item),
+        pageIndex: response.pageIndex,
+        totalPages: response.totalPages,
+        hasPreviousPage: response.hasPreviousPage,
+        hasNextPage: response.hasNextPage,
+      })
     } catch (err) {
       dispatch({ type: "error", error: getErrorMessage(err) })
     }
   }, [normalize, role])
 
   React.useEffect(() => {
-    refresh()
+    pageRef.current = 1
+    void refresh(1)
   }, [refresh])
+
+  const goToPage = React.useCallback(
+    async (page: number) => {
+      const nextPage = Math.max(1, Math.min(page, stateRef.current.totalPages))
+      if (nextPage === pageRef.current && stateRef.current.status === "loaded") return
+      await refresh(nextPage)
+    },
+    [refresh],
+  )
 
   const addLaptop = React.useCallback(
     async (input: CreateLaptopInput) => {
@@ -260,8 +320,8 @@ export function LaptopsProvider({ children }: { children: React.ReactNode }) {
   )
 
   const value = React.useMemo(
-    () => ({ ...state, refresh, addLaptop, assignLaptop, unassignLaptop, setLaptopStatus }),
-    [state, refresh, addLaptop, assignLaptop, unassignLaptop, setLaptopStatus],
+    () => ({ ...state, refresh, goToPage, addLaptop, assignLaptop, unassignLaptop, setLaptopStatus }),
+    [state, refresh, goToPage, addLaptop, assignLaptop, unassignLaptop, setLaptopStatus],
   )
 
   return <LaptopsContext.Provider value={value}>{children}</LaptopsContext.Provider>

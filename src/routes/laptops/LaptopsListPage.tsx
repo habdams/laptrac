@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Box, HStack, Table, Text } from "@chakra-ui/react"
+import { Box, Button, HStack, Table, Text } from "@chakra-ui/react"
 import { Navigate, Outlet, useNavigate, useParams } from "react-router"
 import { useRole } from "../../auth/useRole"
 import { SearchToolbar } from "../../components/common/SearchToolbar"
@@ -9,10 +9,14 @@ import { useLaptops } from "../../features/laptops/LaptopsContext"
 
 export function Component() {
   const role = useRole()
-  const { laptops } = useLaptops()
+  const { laptops, pageIndex, totalPages, hasPreviousPage, hasNextPage, goToPage } = useLaptops()
   const navigate = useNavigate()
   const params = useParams()
-  const [search, setSearch] = React.useState("")
+  const [search, setSearchState] = React.useState("")
+  const setSearch = (value: string) => {
+    setSearchState(value)
+    void goToPage(1)
+  }
 
   if (role !== "it") {
     return <Navigate to="/tickets" replace />
@@ -104,6 +108,20 @@ export function Component() {
           </Table.Body>
         </Table.Root>
       </Box>
+
+      <HStack justify="space-between" mt="4">
+        <Text fontSize="sm" color="fg.muted">
+          Page {pageIndex} of {totalPages}
+        </Text>
+        <HStack>
+          <Button size="sm" variant="outline" disabled={!hasPreviousPage} onClick={() => void goToPage(pageIndex - 1)}>
+            Previous
+          </Button>
+          <Button size="sm" variant="outline" disabled={!hasNextPage} onClick={() => void goToPage(pageIndex + 1)}>
+            Next
+          </Button>
+        </HStack>
+      </HStack>
 
       <Outlet />
     </Box>
