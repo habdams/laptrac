@@ -5,7 +5,8 @@ import { Link as RouterLink, useLocation } from "react-router"
 import { useAuth } from "../../auth/AuthContext"
 import { useRole } from "../../auth/useRole"
 import logoFull from "../../assets/logo-full.svg"
-import { ColorModeButton } from "../ui/color-mode"
+import logoFullWhite from "../../assets/logo-full-white.svg"
+import { ColorModeButton, useColorModeValue } from "../ui/color-mode"
 import { MyLaptopCard } from "./MyLaptopCard"
 import { NotificationBell } from "./NotificationBell"
 import { ProfileCard } from "./ProfileCard"
@@ -13,6 +14,7 @@ import { ProfileCard } from "./ProfileCard"
 export function Sidebar() {
   const { logout } = useAuth()
   const role = useRole()
+  const logo = useColorModeValue(logoFull, logoFullWhite)
 
   return (
     <Box
@@ -29,7 +31,7 @@ export function Sidebar() {
     >
       <VStack align="stretch" gap="4" h="full">
         <HStack justify="space-between">
-          <Image src={logoFull} alt="LapTrac" h="9" fit="contain" alignSelf="flex-start" />
+          <Image src={logo} alt="LapTrac" h="9" fit="contain" alignSelf="flex-start" />
           <NotificationBell />
         </HStack>
 

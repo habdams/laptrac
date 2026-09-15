@@ -3,6 +3,19 @@ import { Navigate } from "react-router"
 import logoFullWhite from "../assets/logo-full-white.svg"
 import { useAuth } from "./AuthContext"
 
+const CENTER = { x: 360, y: 230 }
+
+const SIGNAL_DOTS = [
+  { x: 150, y: 120, r: 2.4, dur: 2.6, delay: 0 },
+  { x: 486, y: 96, r: 1.8, dur: 3.1, delay: 0.7 },
+  { x: 524, y: 336, r: 2.2, dur: 2.4, delay: 1.4 },
+  { x: 198, y: 416, r: 2, dur: 2.9, delay: 0.3 },
+  { x: 86, y: 292, r: 1.6, dur: 3.4, delay: 1.9 },
+  { x: 432, y: 470, r: 2.4, dur: 2.7, delay: 1.0 },
+  { x: 552, y: 196, r: 1.8, dur: 3.2, delay: 2.2 },
+  { x: 258, y: 54, r: 2, dur: 2.5, delay: 1.6 },
+]
+
 export function Component() {
   const { status, login } = useAuth()
 
@@ -71,12 +84,66 @@ export function Component() {
           fill="none"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         >
-          <circle cx="360" cy="230" r="120" stroke="#BB243E" strokeOpacity="0.55" strokeDasharray="3 7" />
-          <circle cx="360" cy="230" r="190" stroke="#BB243E" strokeOpacity="0.32" strokeDasharray="2 10" />
-          <circle cx="360" cy="230" r="260" stroke="#ffffff" strokeOpacity="0.07" />
-          <line x1="0" y1="230" x2="600" y2="230" stroke="#ffffff" strokeOpacity="0.07" />
-          <line x1="360" y1="0" x2="360" y2="600" stroke="#ffffff" strokeOpacity="0.07" />
-          <circle cx="360" cy="230" r="4" fill="#BB243E" />
+          <circle cx={CENTER.x} cy={CENTER.y} r="120" stroke="#BB243E" strokeOpacity="0.55" strokeDasharray="3 7" />
+          <circle cx={CENTER.x} cy={CENTER.y} r="190" stroke="#BB243E" strokeOpacity="0.32" strokeDasharray="2 10" />
+          <circle cx={CENTER.x} cy={CENTER.y} r="260" stroke="#ffffff" strokeOpacity="0.07" />
+          <line x1="0" y1={CENTER.y} x2="600" y2={CENTER.y} stroke="#ffffff" strokeOpacity="0.07" />
+          <line x1={CENTER.x} y1="0" x2={CENTER.x} y2="600" stroke="#ffffff" strokeOpacity="0.07" />
+
+          {SIGNAL_DOTS.map((dot, i) => (
+            <g key={i}>
+              <line
+                x1={dot.x}
+                y1={dot.y}
+                x2={CENTER.x}
+                y2={CENTER.y}
+                stroke="#BB243E"
+                strokeOpacity="0.12"
+                strokeWidth="1"
+              />
+              <circle cx={dot.x} cy={dot.y} r={dot.r} fill="#BB243E" fillOpacity="0.85" />
+              <circle cx={dot.x} cy={dot.y} r={dot.r} fill="none" stroke="#BB243E" strokeWidth="1.2">
+                <animate
+                  attributeName="r"
+                  values={`${dot.r};${dot.r + 14}`}
+                  dur={`${dot.dur}s`}
+                  begin={`${dot.delay}s`}
+                  repeatCount="indefinite"
+                />
+                <animate
+                  attributeName="opacity"
+                  values="0.8;0"
+                  dur={`${dot.dur}s`}
+                  begin={`${dot.delay}s`}
+                  repeatCount="indefinite"
+                />
+              </circle>
+              <circle r="2.2" fill="#BB243E">
+                <animateMotion
+                  path={`M ${dot.x} ${dot.y} L ${CENTER.x} ${CENTER.y}`}
+                  dur={`${dot.dur}s`}
+                  begin={`${dot.delay}s`}
+                  repeatCount="indefinite"
+                />
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;0"
+                  keyTimes="0;0.15;0.75;1"
+                  dur={`${dot.dur}s`}
+                  begin={`${dot.delay}s`}
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </g>
+          ))}
+
+          <circle cx={CENTER.x} cy={CENTER.y} r="14" fill="none" stroke="#BB243E" strokeWidth="1.2" strokeOpacity="0.6">
+            <animate attributeName="r" values="6;22" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.6;0" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <circle cx={CENTER.x} cy={CENTER.y} r="6" fill="#BB243E">
+            <animate attributeName="r" values="6;7.5;6" dur="1.6s" repeatCount="indefinite" />
+          </circle>
         </svg>
         <Stack position="absolute" bottom="10" left="10" gap="0.5" fontFamily="mono" fontSize="xs" color="whiteAlpha.600">
           <Text>asset://laptop-142</Text>
