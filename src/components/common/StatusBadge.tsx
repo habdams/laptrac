@@ -1,6 +1,6 @@
 import { Tag } from "../ui/tag"
 
-export type StatusTone = "gray" | "blue" | "orange" | "green" | "red"
+export type StatusTone = "gray" | "blue" | "yellow" | "green" | "red"
 
 export function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
   return (
@@ -19,7 +19,7 @@ export function StatusBadge({ label, tone }: { label: string; tone: StatusTone }
 
 export const ticketStatusTone: Record<string, StatusTone> = {
   open: "blue",
-  claimed: "orange",
+  claimed: "yellow",
   resolved: "green",
 }
 
@@ -27,6 +27,6 @@ export const laptopStatusTone: Record<string, StatusTone> = {
   available: "green",
   unassigned: "gray",
   assigned: "blue",
-  "in-repair": "orange",
+  "in-repair": "yellow",
   retired: "gray",
 }

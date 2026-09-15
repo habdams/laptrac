@@ -119,7 +119,7 @@ export function Component() {
         value={tab}
         onValueChange={(e) => handleTabChange(e.value)}
         mb="4"
-        colorPalette="orange"
+        colorPalette="brand"
       >
         <Tabs.List>
           <Tabs.Trigger value="all">All</Tabs.Trigger>
@@ -170,7 +170,7 @@ export function Component() {
                 key={ticket.id}
                 onClick={() => navigate(ticket.id)}
                 cursor="pointer"
-                colorPalette={params.id === ticket.id ? "orange" : "gray"}
+                colorPalette={params.id === ticket.id ? "brand" : "gray"}
                 bg={params.id === ticket.id ? "colorPalette.subtle" : undefined}
                 _hover={{ bg: "bg.muted" }}
               >

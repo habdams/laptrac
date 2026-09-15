@@ -22,7 +22,7 @@ export function NotificationBell() {
           </IconButton>
           {unread.length > 0 && (
             <Badge
-              colorPalette="orange"
+              colorPalette="brand"
               position="absolute"
               top="-1"
               right="-1"

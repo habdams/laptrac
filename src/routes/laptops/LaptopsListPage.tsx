@@ -103,7 +103,7 @@ export function Component() {
                 key={laptop.id}
                 onClick={() => navigate(laptop.id)}
                 cursor="pointer"
-                colorPalette={params.id === laptop.id ? "orange" : "gray"}
+                colorPalette={params.id === laptop.id ? "brand" : "gray"}
                 bg={params.id === laptop.id ? "colorPalette.subtle" : undefined}
                 _hover={{ bg: "bg.muted" }}
               >

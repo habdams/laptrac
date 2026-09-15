@@ -11,7 +11,7 @@ export function ProfileCard() {
   return (
     <Box borderWidth="1px" borderColor="border" rounded="lg" p="3">
       <HStack gap="3">
-        <Avatar name={user.name} size="sm" colorPalette="orange" />
+        <Avatar name={user.name} size="sm" colorPalette="brand" />
         <VStack align="flex-start" gap="0" minW="0">
           <Text fontSize="sm" fontWeight="medium" truncate>
             {user.name}

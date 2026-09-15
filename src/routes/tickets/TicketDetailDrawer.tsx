@@ -127,7 +127,7 @@ export function Component() {
             {canManage && ticket.status !== "resolved" && (
               <HStack>
                 {ticket.status === "open" && (
-                  <Button size="sm" colorPalette="orange" onClick={handleClaim}>
+                  <Button size="sm" colorPalette="brand" onClick={handleClaim}>
                     Claim ticket
                   </Button>
                 )}
@@ -177,7 +177,7 @@ export function Component() {
               size="sm"
               rows={1}
             />
-            <Button size="sm" colorPalette="orange" onClick={handleComment}>
+            <Button size="sm" colorPalette="brand" onClick={handleComment}>
               Send
             </Button>
           </HStack>

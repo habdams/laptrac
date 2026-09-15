@@ -5,7 +5,7 @@ interface SparklineProps {
   stroke?: string
 }
 
-export function Sparkline({ data, width = 96, height = 32, stroke = "#f97316" }: SparklineProps) {
+export function Sparkline({ data, width = 96, height = 32, stroke = "#BB243E" }: SparklineProps) {
   if (data.length < 2) return null
 
   const max = Math.max(...data)

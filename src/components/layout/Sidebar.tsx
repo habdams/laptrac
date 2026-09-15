@@ -1,9 +1,10 @@
-import { Box, Button, HStack, Separator, Stack, Text, VStack } from "@chakra-ui/react"
+import { Box, Button, HStack, Image, Separator, Stack, Text, VStack } from "@chakra-ui/react"
 import type { ReactNode } from "react"
 import { LuLaptop, LuLogOut, LuTicket, LuUsers } from "react-icons/lu"
 import { Link as RouterLink, useLocation } from "react-router"
 import { useAuth } from "../../auth/AuthContext"
 import { useRole } from "../../auth/useRole"
+import logoFull from "../../assets/logo-full.svg"
 import { ColorModeButton } from "../ui/color-mode"
 import { MyLaptopCard } from "./MyLaptopCard"
 import { NotificationBell } from "./NotificationBell"
@@ -28,9 +29,7 @@ export function Sidebar() {
     >
       <VStack align="stretch" gap="4" h="full">
         <HStack justify="space-between">
-          <Text fontSize="lg" fontWeight="bold">
-            LapTrac
-          </Text>
+          <Image src={logoFull} alt="LapTrac" h="9" fit="contain" alignSelf="flex-start" />
           <NotificationBell />
         </HStack>
 
@@ -67,7 +66,7 @@ function SidebarLink({ to, icon, label }: { to: string; icon: ReactNode; label: 
   return (
     <HStack
       asChild
-      colorPalette={isActive ? "orange" : "gray"}
+      colorPalette={isActive ? "brand" : "gray"}
       gap="2"
       px="3"
       py="2"

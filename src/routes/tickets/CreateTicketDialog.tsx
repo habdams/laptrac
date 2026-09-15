@@ -89,7 +89,7 @@ export function Component() {
             <Button variant="ghost" onClick={close} type="button">
               Cancel
             </Button>
-            <Button colorPalette="orange" type="submit" loading={submitting}>
+            <Button colorPalette="brand" type="submit" loading={submitting}>
               Submit
             </Button>
           </DialogFooter>

@@ -113,7 +113,7 @@ export function Component() {
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-              <Button size="sm" colorPalette="orange" disabled={!assignee} onClick={handleAssign}>
+              <Button size="sm" colorPalette="brand" disabled={!assignee} onClick={handleAssign}>
                 Assign
               </Button>
             </HStack>

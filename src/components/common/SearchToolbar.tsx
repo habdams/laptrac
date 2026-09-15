@@ -42,7 +42,7 @@ export function SearchToolbar({
         )}
       </HStack>
       {onAdd && (
-        <Button type="button" colorPalette="orange" onClick={onAdd}>
+        <Button type="button" colorPalette="brand" onClick={onAdd}>
           <LuPlus /> {addLabel}
         </Button>
       )}

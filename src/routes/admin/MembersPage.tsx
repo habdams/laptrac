@@ -98,7 +98,7 @@ export function Component() {
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
-          <Button type="submit" colorPalette="orange" loading={submitting}>
+          <Button type="submit" colorPalette="brand" loading={submitting}>
             Add
           </Button>
         </HStack>
@@ -145,7 +145,7 @@ export function Component() {
                     <Table.Cell>{roleLabel(user.role)}</Table.Cell>
                     <Table.Cell>{user.isActive ? "Yes" : "No"}</Table.Cell>
                     <Table.Cell>
-                      <Button size="xs" variant="ghost" colorPalette={user.role === 1 ? "red" : "orange"} onClick={(event) => handleRoleToggle(event, user)}>
+                      <Button size="xs" variant="ghost" colorPalette={user.role === 1 ? "red" : "brand"} onClick={(event) => handleRoleToggle(event, user)}>
                         {user.role === 1 ? "Revoke IT" : "Make IT"}
                       </Button>
                     </Table.Cell>
